@@ -312,7 +312,7 @@ function renderLogin(){
     // Dots
     const dots=div({display:'flex',justifyContent:'center',gap:18,marginBottom:20});
     if(shake)dots.className='shake';
-    for(let i=0;i<4;i++) dots.appendChild(h('div',{className:'pin-dot',style:{background:pinErr?C.red:i<pin.length?C.blue:C.bd}}));
+    for(let i=0;i<4;i++) dots.appendChild(h('div',{className:'pin-dot',style:{width:'22px',height:'22px',background:pinErr?C.red:i<pin.length?C.blue:C.bd}}));
     pb.appendChild(dots);
     if(pinErr) pb.appendChild(div({textAlign:'center',color:C.red,fontSize:12,fontWeight:700,marginBottom:12},'PIN INCORRETO — TENTE NOVAMENTE'));
 
@@ -322,7 +322,7 @@ function renderLogin(){
       grid.appendChild(h('button',{className:'btn',
         onClick:()=>d==='⌫'?delPin():d!==''?enterPin(String(d)):null,
         style:{background:d===''?'transparent':C.white,border:d===''?'none':`1.5px solid ${C.bd}`,
-          borderRadius:4,height:88,
+          borderRadius:4,height:90,
           fontSize:d==='⌫'?38:52,
           fontWeight:700,color:d==='⌫'?C.t2:C.tx,
           cursor:d===''?'default':'pointer',
