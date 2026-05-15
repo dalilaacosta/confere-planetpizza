@@ -440,6 +440,82 @@ function renderOverview(){
   return frag;
 }
 
+// ── TAB: UNITS ────────────────────────────────────────────────────────────
+function renderUnits(){
+  const {units,modal,modalData,saving,error,success}=state;
+  const frag=document.createDocumentFragment();
+  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
+  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
+
+  const active=units.filter(u=>u.active!==false);
+  const inactive=units.filter(u=>u.active===false);
+
+  frag.appendChild(sec('🏪  Unidades Ativas',active.length+' unidades','+ Nova Unidade',()=>ss({modal:'unit',modalData:{active:true}})));
+  const tbl=h('table',{className:'tbl'});
+  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'Operadores'),h('th',{},'Status'),h('th',{},'Ações'))));
+  const tbody=h('tbody',{});
+
+  [...active,...inactive].forEach(u=>{
+    const opCount=state.operators.filter(o=>o.unit_id===u.id).length;
+    const isActive=u.active!==false;
+    tbody.appendChild(h('tr',{},
+      h('td',{style:{fontWeight:700,color:isActive?'#1A237E':'#999'}},u.name),
+      h('td',{style:{color:'#555'}},opCount+' operador'+(opCount!==1?'es':'')),
+      h('td',{},h('span',{className:`tag ${isActive?'tag-green':'tag-red'}`},isActive?'ATIVA':'INATIVA')),
+      h('td',{},
+        h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'unit',modalData:{...u}})},'Editar'),
+        h('button',{className:`btn btn-sm ${isActive?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
+          await sb.from('units').update({active:!isActive}).eq('id',u.id);
+          await reload();
+        }},isActive?'Desativar':'Ativar'),
+        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
+          if(opCount>0){alert('Não é possível excluir uma unidade com operadores cadastrados. Transfira ou remova os operadores primeiro.');return;}
+          if(confirm('Excluir a unidade "'+u.name+'"? Esta ação não pode ser desfeita.')){{
+            await sb.from('units').delete().eq('id',u.id);
+            await reload();
+            ss({success:'Unidade excluída!'});setTimeout(()=>ss({success:null}),3000);
+          }}
+        }},'Excluir')
+      )
+    ));
+  });
+
+  if([...active,...inactive].length===0){
+    tbody.appendChild(h('tr',{},h('td',{colSpan:4,style:{textAlign:'center',color:'#999',padding:'24px'}},'Nenhuma unidade cadastrada.')));
+  }
+
+  tbl.appendChild(tbody);frag.appendChild(tbl);
+
+  // Modal unidade
+  if(modal==='unit'){
+    const md=modalData;const isEdit=!!md.id;
+    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'400px'}});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Unidade':'Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+    const g=div({className:'form-group'});
+    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade'));
+    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
+    inp.addEventListener('input',e=>{md.name=e.target.value;});
+    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
+        if(!md.name.trim()){ss({error:'Nome é obrigatório.'});return;}
+        ss({saving:true});
+        if(isEdit){await sb.from('units').update({name:md.name}).eq('id',md.id);}
+        else{await sb.from('units').insert({name:md.name,active:true});}
+        await reload();
+        ss({saving:false,modal:null,modalData:{},success:isEdit?'Unidade atualizada!':'Unidade criada!'});
+        setTimeout(()=>ss({success:null}),3000);
+      }},saving?'Salvando...':'Salvar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
+  return frag;
+}
+
 // ── TAB: OPERATORS ────────────────────────────────────────────────────────
 function renderOperators(){
   const {operators,units,modal,modalData,saving,error,success}=state;
@@ -466,7 +542,8 @@ function renderOperators(){
       h('td',{},h('span',{className:`tag ${op.active?'tag-green':'tag-red'}`},op.active?'ATIVO':'INATIVO')),
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'operator',modalData:{...op}})},'Editar'),
-        h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar')
+        h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar'),
+        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir operador "'+op.name+'"? Esta ação não pode ser desfeita.')){{await sb.from('operators').delete().eq('id',op.id);await reload();ss({success:'Operador excluído!'});setTimeout(()=>ss({success:null}),3000);}}}}},'Excluir')
       )
     );
     tbody.appendChild(tr);
@@ -559,7 +636,8 @@ function renderChecklists(){
         h('td',{},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
-          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar')
+          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir o checklist "'+cl.name+'"? Todos os dados serão perdidos.')){{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}}}},'Excluir')
         )
       );
       tbody.appendChild(tr);
@@ -719,7 +797,12 @@ function renderDocuments(){
         h('td',{},h('span',{className:'tag '+st.cls},st.label)),
         h('td',{},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'document',modalData:{...doc}})},'Editar'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir este documento?')){await sb.from('documents').delete().eq('id',doc.id);await reload();}}},'Excluir')
+          h('button',{className:`btn btn-sm ${doc.status!=='archived'?'btn-gray':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
+            const newStatus=doc.status==='archived'?'active':'archived';
+            await sb.from('documents').update({status:newStatus}).eq('id',doc.id);
+            await reload();ss({success:newStatus==='archived'?'Documento arquivado!':'Documento reativado!'});setTimeout(()=>ss({success:null}),3000);
+          }},doc.status==='archived'?'Reativar':'Arquivar'),
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir este documento? Esta ação não pode ser desfeita.')){await sb.from('documents').delete().eq('id',doc.id);await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
         )
       ));
     });
@@ -862,43 +945,12 @@ function renderSettings(){
   const {units,modal,modalData,saving}=state;
   const frag=document.createDocumentFragment();
   
-  // Intro card
-  frag.appendChild(div({background:'#fff',border:'1px solid #D0D0D0',padding:'14px 16px',marginBottom:12,borderLeft:'4px solid #0D7390'},
-    div({fontSize:13,fontWeight:700,color:'#1A237E',marginBottom:4},'⚙️ Configurações do Sistema'),
-    div({fontSize:12,color:'#777'},'Gerencie as unidades/lojas do seu negócio. Cada unidade tem seus próprios checklists, operadores e documentos.')
+  frag.appendChild(div({background:'#fff',border:'1px solid #D0D0D0',padding:'20px',textAlign:'center',color:'#777'},
+    div({fontSize:32,marginBottom:8},'⚙️'),
+    div({fontSize:14,fontWeight:700,color:'#1A237E',marginBottom:6},'Configurações do Sistema'),
+    div({fontSize:13,color:'#777',marginBottom:16},'As unidades agora têm sua própria aba no menu principal.'),
+    h('button',{className:'btn btn-primary',onClick:()=>ss({tab:'units'})},'🏪  Ir para Unidades')
   ));
-
-  frag.appendChild(sec('🏪  Unidades Cadastradas',units.length+' unidades','+ Nova Unidade',()=>ss({modal:'unit',modalData:{}})));
-  const tbl=h('table',{className:'tbl'});
-  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'ID'))));
-  const tbody=h('tbody',{});
-  units.forEach(u=>{
-    tbody.appendChild(h('tr',{},h('td',{style:{fontWeight:700}},u.name),h('td',{style:{color:C.t3,fontSize:11,fontFamily:'monospace'}},u.id)));
-  });
-  tbl.appendChild(tbody);frag.appendChild(tbl);
-
-  if(modal==='unit'){
-    const md=modalData;
-    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'400px'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},'Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
-    const g=div({className:'form-group'});
-    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade'));
-    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';inp.placeholder='Ex: Planet Shopping ABC';
-    inp.addEventListener('input',e=>{md.name=e.target.value;});
-    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
-      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
-      h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
-        if(!md.name)return;ss({saving:true});
-        await sb.from('units').insert({name:md.name});
-        await reload();ss({saving:false,modal:null,modalData:{},success:'Unidade criada!'});
-        setTimeout(()=>ss({success:null}),3000);
-      }},saving?'Salvando...':'Salvar')
-    ));
-    overlay.appendChild(m);frag.appendChild(overlay);
-  }
   return frag;
 }
 
@@ -919,7 +971,7 @@ function renderDashboard(){
 
   // Nav
   const nav=h('div',{className:'nav'});
-  [['overview','🏠  Visão Geral'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['documents','📄  Documentação'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
+  [['overview','🏠  Visão Geral'],['units','🏪  Unidades'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['documents','📄  Documentação'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
     nav.appendChild(h('button',{className:`nav-tab${tab===id?' active':''}`,onClick:()=>ss({tab:id,modal:null,error:null,success:null})},label));
   });
   root.appendChild(nav);
@@ -927,6 +979,7 @@ function renderDashboard(){
   // Content
   const content=div({className:'content fade'});
   if(tab==='overview')content.appendChild(renderOverview());
+  else if(tab==='units')content.appendChild(renderUnits());
   else if(tab==='operators')content.appendChild(renderOperators());
   else if(tab==='checklists')content.appendChild(renderChecklists());
   else if(tab==='documents')content.appendChild(renderDocuments());
