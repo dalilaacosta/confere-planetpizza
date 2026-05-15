@@ -187,11 +187,29 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-si
 const {createClient}=supabase;
 const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable_Ib7zu9sSJmpCIi3Q8j2E2w_6FCR2VVE');
 
+// ── SESSION ───────────────────────────────────────────────────────────────
+function getSession(){
+  try{return JSON.parse(sessionStorage.getItem('confere_user'));}
+  catch(e){return null;}
+}
+function requireAuth(){
+  const s=getSession();
+  if(!s){window.location.href='login.html';return null;}
+  return s;
+}
+function logout(){
+  sessionStorage.removeItem('confere_user');
+  window.location.href='login.html';
+}
+const SESSION=getSession();
+if(!SESSION){window.location.href='login.html';}
+const COMPANY_ID=SESSION?.company_id;
+
 const C={teal:"#0D7390",navy:"#1A237E",blue:"#1565C0",green:"#2E7D32",red:"#C62828",amber:"#F9A825",bd:"#D0D0D0",bg:"#F2F2F2",white:"#fff",tx:"#1A1A1A",t2:"#444",t3:"#777"};
 
 let state={
   screen:'loading',
-  manager:null,selMgr:null,pin:'',pinErr:false,
+  manager:SESSION,selMgr:null,pin:'',pinErr:false,
   operators:[],checklists:[],units:[],executions:[],issues:[],documents:[],
   tab:'overview',
   modal:null,modalData:{},
@@ -202,11 +220,12 @@ function ss(p){state={...state,...p};render();}
 
 // ── DATA ──────────────────────────────────────────────────────────────────
 async function init(){
+  if(!SESSION){window.location.href='login.html';return;}
   try{
     const [opsR,clsR,unitsR]=await Promise.all([
-      sb.from('operators').select('*').eq('active',true).order('name'),
-      sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').order('sector'),
-      sb.from('units').select('*').order('name'),
+      sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
+      sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
+      sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     ]);
     const cls=clsR.data||[];
     cls.forEach(cl=>{
@@ -217,23 +236,23 @@ async function init(){
     const execs=await loadExecs();
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
-    ss({screen:'login',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],managers});
+    ss({screen:'dashboard',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[]});
   }catch(e){ss({screen:'login',error:'Erro ao conectar.'});}
 }
 
 async function loadExecs(){
   const d=new Date();d.setHours(0,0,0,0);
-  const {data}=await sb.from('executions').select('*, operators(id,name), checklists(name,sector)').gte('started_at',d.toISOString()).order('started_at',{ascending:false});
+  const {data}=await sb.from('executions').select('*, operators(id,name), checklists(name,sector)').eq('company_id',COMPANY_ID).gte('started_at',d.toISOString()).order('started_at',{ascending:false});
   return data||[];
 }
 
 async function reload(){
   const [opsR,clsR,unitsR,issR,docsR]=await Promise.all([
-    sb.from('operators').select('*').order('name'),
-    sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').order('sector'),
-    sb.from('units').select('*').order('name'),
+    sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
+    sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
+    sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false}),
-    sb.from('documents').select('*, units(name)').order('expiry_date'),
+    sb.from('documents').select('*, units(name)').eq('company_id',COMPANY_ID).order('expiry_date'),
   ]);
   const cls=clsR.data||[];
   cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
@@ -641,7 +660,7 @@ function renderOperators(){
     m.appendChild(div({className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
-        const data={name:md.name,initials:(md.initials||'').toUpperCase().slice(0,2),role:md.role,pin:md.pin,unit_id:md.unit_id||null,access_level:md.access_level||'operator',active:md.active!==false};
+        const data={name:md.name,initials:(md.initials||'').toUpperCase().slice(0,2),role:md.role,pin:md.pin,unit_id:md.unit_id||null,access_level:md.access_level||'operator',active:md.active!==false,company_id:COMPANY_ID};
         saveOperator(data,md.id);
       }},saving?'Salvando...':'Salvar')
     ));
@@ -730,7 +749,7 @@ function renderChecklists(){
     m.appendChild(div({className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
-        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:md.active!==false};
+        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:md.active!==false,company_id:COMPANY_ID};
         saveChecklist(data,md.id);
       }},saving?'Salvando...':'Salvar')
     ));
@@ -971,7 +990,7 @@ function renderDocuments(){
             if(!upErr){const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);fileUrl=publicUrl;}
           }catch(e){}
         }
-        const data={name:md.name,unit_id:md.unit_id||null,expiry_date:md.expiry_date,renewal_frequency:md.renewal_frequency||'annual',remind_days_before:Number(md.remind_days_before)||30,notes:md.notes||null,file_url:fileUrl,status:'active'};
+        const data={name:md.name,unit_id:md.unit_id||null,expiry_date:md.expiry_date,renewal_frequency:md.renewal_frequency||'annual',remind_days_before:Number(md.remind_days_before)||30,notes:md.notes||null,file_url:fileUrl,status:'active',company_id:COMPANY_ID};
         if(isEdit){await sb.from('documents').update(data).eq('id',md.id);}
         else{await sb.from('documents').insert(data);}
         await reload();ss({saving:false,modal:null,modalData:{},success:isEdit?'Documento atualizado!':'Documento cadastrado!'});
@@ -1009,7 +1028,7 @@ function renderDashboard(){
   tb.appendChild(h('span',{className:'top-bar-sub'},'· Painel do Gestor'));
   const userDiv=div({className:'top-bar-user'});
   userDiv.appendChild(h('span',{className:'top-bar-name'},manager.name));
-  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:()=>ss({manager:null,screen:'login'})},'Sair'));
+  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:()=>logout()},'Sair'));
   tb.appendChild(userDiv);
   root.appendChild(tb);
 
@@ -1037,6 +1056,7 @@ function renderDashboard(){
 function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
+  if(!SESSION){window.location.href='login.html';return;}
   if(state.screen==='loading'){
     c=div({display:'flex',flexDirection:'column',minHeight:'100vh'},
       h('div',{className:'top-bar'},h('span',{style:{color:'#fff',fontWeight:900,fontSize:16}},'☑ Confere')),
