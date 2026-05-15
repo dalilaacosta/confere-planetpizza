@@ -352,70 +352,93 @@ function bottomNav(){
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
 function renderLogin(){
-  const {selEmp,error}=state;
+  const {error}=state;
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('☑','Confere — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
 
-  if(!selEmp){
-    scr.appendChild(h('div',{className:'sec'},h('span',{},'Quem é você?')));
-    const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
-    const swrap=div({className:'search-wrap'});
-    swrap.appendChild(h('span',{className:'search-icon'},'🔍'));
-    const sinp=document.createElement('input');sinp.type='text';sinp.className='search-inp';sinp.placeholder='Buscar pelo nome...';
-    swrap.appendChild(sinp);sw.appendChild(swrap);body.appendChild(sw);
-    const empList=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
-    function renderList(q){
-      empList.innerHTML='';
-      const f=state.operators.filter(o=>o.name.toLowerCase().includes((q||'').toLowerCase()));
-      if(!f.length){empList.appendChild(div({padding:'16px',textAlign:'center',color:C.t3,fontSize:13},'Nenhum operador encontrado'));return;}
-      f.forEach(emp=>{
-        empList.appendChild(h('button',{className:'btn',onClick:()=>{sinp.blur();ss({selEmp:emp,pin:'',activeTab:'checklists'});},
-          style:{background:C.white,border:'none',borderBottom:`1px solid ${C.bd}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,width:'100%',cursor:'pointer',textAlign:'left'}},
-          div({width:42,height:42,borderRadius:'50%',background:'#546E7A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
-          div({flex:1},div({fontSize:20,fontWeight:700,color:C.tx},emp.name),div({fontSize:14,color:C.t3,marginTop:2},emp.role)),
-          h('span',{style:{fontSize:20,color:C.t4}},'›')
-        ));
-      });
+  // Seção busca
+  const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
+  const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
+  const swrap=div({className:'search-wrap'});
+  swrap.appendChild(h('span',{className:'search-icon'},'🔍'));
+  const sinp=document.createElement('input');sinp.type='text';sinp.className='search-inp';sinp.placeholder='Buscar pelo nome...';
+  swrap.appendChild(sinp);sw.appendChild(swrap);
+  const empList=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
+
+  // Seção PIN (oculta inicialmente)
+  const selSec=h('div',{className:'sec'},h('span',{},'Operador Identificado'));selSec.style.display='none';
+  const selCard=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',display:'none'});
+  const pinSec=h('div',{className:'sec'},h('span',{},'PIN de Acesso'));pinSec.style.display='none';
+  const pb=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'28px 24px',display:'none'});
+  pb.appendChild(div({fontSize:13,color:C.t3,textAlign:'center',marginBottom:16,letterSpacing:'.04em'},'Digite seu PIN de 4 dígitos'));
+  const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:12,marginBottom:8,cursor:'text'});
+  const boxes=[];
+  for(let i=0;i<4;i++){const box=div({style:{width:'60px',height:'72px',border:`2px solid ${C.bd}`,background:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',fontWeight:'700',transition:'all .15s',borderRadius:'4px'}});box.className='pin-box';boxes.push(box);pinWrap.appendChild(box);}
+  const errMsg=div({textAlign:'center',color:C.red,fontSize:13,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO — TENTE NOVAMENTE');
+  const nativeInp=document.createElement('input');
+  nativeInp.type='tel';nativeInp.inputMode='numeric';nativeInp.maxLength=4;nativeInp.autocomplete='off';
+  Object.assign(nativeInp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
+  function updateBoxes(val,isErr){boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});}
+  nativeInp.addEventListener('input',e=>{
+    const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);
+    e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
+    if(val.length===4){
+      const emp=state.selEmp;
+      const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
+      if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
+      else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
     }
-    sinp.addEventListener('input',e=>renderList(e.target.value));renderList('');body.appendChild(empList);
-  } else {
-    scr.appendChild(h('div',{className:'sec'},h('span',{},'Operador Identificado')));
-    const card=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
-    card.appendChild(div({padding:'14px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:`1px solid ${C.bd}`},
-      div({width:48,height:48,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:'#fff',flexShrink:0},selEmp.initials),
-      div({flex:1},div({fontSize:22,fontWeight:700,color:C.tx},selEmp.name),div({fontSize:15,color:C.t3,marginTop:2},selEmp.role)),
-      h('button',{className:'btn',onClick:()=>ss({selEmp:null,pin:''}),style:{background:C.bg,border:`1px solid ${C.bd}`,color:C.t2,fontSize:11,padding:'6px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"}},'TROCAR')
+  });
+  pinWrap.appendChild(nativeInp);
+  // iOS fix: touchstart garante abertura do teclado dentro do gesto
+  pinWrap.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
+  pinWrap.addEventListener('click',()=>nativeInp.focus());
+  pb.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
+  pb.appendChild(pinWrap);pb.appendChild(errMsg);
+
+  function showPin(emp){
+    state.selEmp=emp;
+    selCard.innerHTML='';
+    selCard.appendChild(div({padding:'14px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:`1px solid ${C.bd}`},
+      div({width:48,height:48,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
+      div({flex:1},div({fontSize:22,fontWeight:700,color:C.tx},emp.name),div({fontSize:15,color:C.t3,marginTop:2},emp.role)),
+      h('button',{className:'btn',onClick:()=>{
+        state.selEmp=null;nativeInp.value='';updateBoxes('',false);
+        opSec.style.display='';sw.style.display='';empList.style.display='';
+        selSec.style.display='none';selCard.style.display='none';
+        pinSec.style.display='none';pb.style.display='none';
+        sinp.value='';renderList('');
+      },style:{background:C.bg,border:`1px solid ${C.bd}`,color:C.t2,fontSize:11,padding:'6px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"}},'TROCAR')
     ));
-    body.appendChild(card);
-    body.appendChild(div({height:10}));
-    scr.appendChild(h('div',{className:'sec'},h('span',{},'PIN de Acesso')));
-    const pb=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'28px 24px'});
-    pb.appendChild(div({fontSize:13,color:C.t3,textAlign:'center',marginBottom:16,letterSpacing:'.04em'},'Digite seu PIN de 4 dígitos'));
-    const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:12,marginBottom:8,cursor:'text'});
-    const boxes=[];
-    for(let i=0;i<4;i++){const box=div({style:{width:'60px',height:'72px',border:`2px solid ${C.bd}`,background:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',fontWeight:'700',transition:'all .15s',borderRadius:'4px'}});box.className='pin-box';boxes.push(box);pinWrap.appendChild(box);}
-    const errMsg=div({textAlign:'center',color:C.red,fontSize:13,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO — TENTE NOVAMENTE');
-    const nativeInp=document.createElement('input');nativeInp.type='tel';nativeInp.inputMode='numeric';nativeInp.maxLength=4;nativeInp.autocomplete='off';
-    Object.assign(nativeInp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
-    function updateBoxes(val,isErr){boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});}
-    nativeInp.addEventListener('input',e=>{
-      const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
-      if(val.length===4){
-        const op=state.operators.find(o=>o.pin===val&&o.id===selEmp.id);
-        if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
-        else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
-      }
-    });
-    pinWrap.appendChild(nativeInp);pinWrap.addEventListener('click',()=>nativeInp.focus());
-    pb.appendChild(pinWrap);pb.appendChild(errMsg);
-    setTimeout(()=>nativeInp.focus(),150);
-    body.appendChild(pb);
+    opSec.style.display='none';sw.style.display='none';empList.style.display='none';
+    selSec.style.display='';selCard.style.display='';pinSec.style.display='';pb.style.display='';
+    nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';
+    // iOS trick: duplo rAF garante foco após DOM estabilizar
+    requestAnimationFrame(()=>requestAnimationFrame(()=>nativeInp.focus()));
   }
+
+  function renderList(q){
+    empList.innerHTML='';
+    const f=state.operators.filter(o=>o.name.toLowerCase().includes((q||'').toLowerCase()));
+    if(!f.length){empList.appendChild(div({padding:'16px',textAlign:'center',color:C.t3,fontSize:13},'Nenhum operador encontrado'));return;}
+    f.forEach(emp=>{
+      empList.appendChild(h('button',{className:'btn',onClick:()=>{sinp.blur();showPin(emp);},
+        style:{background:C.white,border:'none',borderBottom:`1px solid ${C.bd}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,width:'100%',cursor:'pointer',textAlign:'left'}},
+        div({width:42,height:42,borderRadius:'50%',background:'#546E7A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
+        div({flex:1},div({fontSize:20,fontWeight:700,color:C.tx},emp.name),div({fontSize:14,color:C.t3,marginTop:2},emp.role)),
+        h('span',{style:{fontSize:20,color:C.t4}},'›')
+      ));
+    });
+  }
+  sinp.addEventListener('input',e=>renderList(e.target.value));
+  renderList('');
+  body.appendChild(opSec);body.appendChild(sw);body.appendChild(empList);
+  body.appendChild(selSec);body.appendChild(selCard);
+  body.appendChild(pinSec);body.appendChild(pb);
   scr.appendChild(body);return scr;
 }
-
 // ── HOME / CHECKLISTS TAB ─────────────────────────────────────────────────
 function renderChecklists(){
   const {employee,lastDone,confirmRedo,executions,checklists,error}=state;
@@ -730,4 +753,95 @@ function render(){
 render();init();
 </script>
 </body>
-</html>
+</html>// ── LOGIN ──────────────────────────────────────────────────────────────
+function renderLogin(){
+  const {error}=state;
+  const scr=div({display:'flex',flexDirection:'column',flex:1});
+  scr.appendChild(topBar('☑','Confere — Acesso do Operador'));
+  if(error)scr.appendChild(h('div',{className:'err-bar'},error));
+  const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
+
+  // Seção busca
+  const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
+  const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
+  const swrap=div({className:'search-wrap'});
+  swrap.appendChild(h('span',{className:'search-icon'},'🔍'));
+  const sinp=document.createElement('input');sinp.type='text';sinp.className='search-inp';sinp.placeholder='Buscar pelo nome...';
+  swrap.appendChild(sinp);sw.appendChild(swrap);
+  const empList=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
+
+  // Seção PIN (oculta inicialmente)
+  const selSec=h('div',{className:'sec'},h('span',{},'Operador Identificado'));selSec.style.display='none';
+  const selCard=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',display:'none'});
+  const pinSec=h('div',{className:'sec'},h('span',{},'PIN de Acesso'));pinSec.style.display='none';
+  const pb=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'28px 24px',display:'none'});
+  pb.appendChild(div({fontSize:13,color:C.t3,textAlign:'center',marginBottom:16,letterSpacing:'.04em'},'Digite seu PIN de 4 dígitos'));
+  const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:12,marginBottom:8,cursor:'text'});
+  const boxes=[];
+  for(let i=0;i<4;i++){const box=div({style:{width:'60px',height:'72px',border:`2px solid ${C.bd}`,background:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',fontWeight:'700',transition:'all .15s',borderRadius:'4px'}});box.className='pin-box';boxes.push(box);pinWrap.appendChild(box);}
+  const errMsg=div({textAlign:'center',color:C.red,fontSize:13,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO — TENTE NOVAMENTE');
+  const nativeInp=document.createElement('input');
+  nativeInp.type='tel';nativeInp.inputMode='numeric';nativeInp.maxLength=4;nativeInp.autocomplete='off';
+  Object.assign(nativeInp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
+
+  function updateBoxes(val,isErr){boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});}
+
+  nativeInp.addEventListener('input',e=>{
+    const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);
+    e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
+    if(val.length===4){
+      const emp=state.selEmp;
+      const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
+      if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
+      else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
+    }
+  });
+  pinWrap.appendChild(nativeInp);
+  // iOS fix: touchstart garante abertura do teclado dentro do gesto
+  pinWrap.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
+  pinWrap.addEventListener('click',()=>nativeInp.focus());
+  pb.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
+  pb.appendChild(pinWrap);pb.appendChild(errMsg);
+
+  // Mostra PIN sem re-render — foco síncrono funciona no iOS
+  function showPin(emp){
+    state.selEmp=emp;
+    selCard.innerHTML='';
+    selCard.appendChild(div({padding:'14px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:`1px solid ${C.bd}`},
+      div({width:48,height:48,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
+      div({flex:1},div({fontSize:22,fontWeight:700,color:C.tx},emp.name),div({fontSize:15,color:C.t3,marginTop:2},emp.role)),
+      h('button',{className:'btn',onClick:()=>{
+        state.selEmp=null;nativeInp.value='';updateBoxes('',false);
+        opSec.style.display='';sw.style.display='';empList.style.display='';
+        selSec.style.display='none';selCard.style.display='none';
+        pinSec.style.display='none';pb.style.display='none';
+        sinp.value='';renderList('');
+      },style:{background:C.bg,border:`1px solid ${C.bd}`,color:C.t2,fontSize:11,padding:'6px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"}},'TROCAR')
+    ));
+    opSec.style.display='none';sw.style.display='none';empList.style.display='none';
+    selSec.style.display='';selCard.style.display='';pinSec.style.display='';pb.style.display='';
+    nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';
+    // iOS trick: duplo rAF garante foco após DOM estabilizar
+    requestAnimationFrame(()=>requestAnimationFrame(()=>nativeInp.focus())); // síncrono dentro do click → iOS permite
+  }
+
+  function renderList(q){
+    empList.innerHTML='';
+    const f=state.operators.filter(o=>o.name.toLowerCase().includes((q||'').toLowerCase()));
+    if(!f.length){empList.appendChild(div({padding:'16px',textAlign:'center',color:C.t3,fontSize:13},'Nenhum operador encontrado'));return;}
+    f.forEach(emp=>{
+      empList.appendChild(h('button',{className:'btn',onClick:()=>{sinp.blur();showPin(emp);},
+        style:{background:C.white,border:'none',borderBottom:`1px solid ${C.bd}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,width:'100%',cursor:'pointer',textAlign:'left'}},
+        div({width:42,height:42,borderRadius:'50%',background:'#546E7A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
+        div({flex:1},div({fontSize:20,fontWeight:700,color:C.tx},emp.name),div({fontSize:14,color:C.t3,marginTop:2},emp.role)),
+        h('span',{style:{fontSize:20,color:C.t4}},'›')
+      ));
+    });
+  }
+  sinp.addEventListener('input',e=>renderList(e.target.value));
+  renderList('');
+  body.appendChild(opSec);body.appendChild(sw);body.appendChild(empList);
+  body.appendChild(selSec);body.appendChild(selCard);
+  body.appendChild(pinSec);body.appendChild(pb);
+  scr.appendChild(body);return scr;
+}
