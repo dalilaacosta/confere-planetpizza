@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Confere — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',sans-serif;background:#F0F3F9;min-height:100vh;display:flex;flex-direction:column}
+.top-bar{background:#0D7390;height:48px;display:flex;align-items:center;padding:0 24px}
+.logo{color:#fff;font-size:18px;font-weight:900;letter-spacing:.04em}
+.wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#fff;border:1px solid #D0D0D0;width:100%;max-width:420px;padding:36px}
+.title{font-size:20px;font-weight:900;color:#1A237E;margin-bottom:4px;letter-spacing:.01em}
+.sub{font-size:13px;color:#777;margin-bottom:24px}
+.label{display:block;font-size:11px;font-weight:700;color:#555;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.inp{width:100%;border:1.5px solid #D0D0D0;padding:11px 14px;font-size:14px;font-family:'Roboto',sans-serif;color:#1A1A1A;outline:none;transition:border .15s;margin-bottom:14px}
+.inp:focus{border-color:#1565C0}
+.btn-main{width:100%;background:#1A237E;color:#fff;border:none;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;letter-spacing:.04em;text-transform:uppercase;transition:background .15s;margin-top:4px}
+.btn-main:hover{background:#1565C0}
+.btn-main:disabled{background:#9E9E9E;cursor:not-allowed}
+.err{background:#FFEBEE;border-left:4px solid #C62828;padding:10px 14px;font-size:12px;color:#C62828;font-weight:700;margin-bottom:16px;display:none}
+.ok{background:#E8F5E9;border-left:4px solid #2E7D32;padding:10px 14px;font-size:12px;color:#2E7D32;font-weight:700;margin-bottom:16px;display:none}
+.divider{text-align:center;color:#999;font-size:12px;margin:20px 0;position:relative}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:#D0D0D0}
+.divider::before{left:0}.divider::after{right:0}
+.link{color:#1565C0;text-decoration:none;font-weight:700}
+.link:hover{text-decoration:underline}
+.footer{text-align:center;font-size:12px;color:#999;margin-top:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <span class="logo">☑ Confere</span>
+</div>
+<div class="wrap">
+  <div class="card">
+    <div class="title">Bem-vindo de volta</div>
+    <div class="sub">Entre com o e-mail e senha da sua empresa</div>
+    <div class="err" id="err"></div>
+    <div class="ok" id="ok"></div>
+    <label class="label">E-mail</label>
+    <input type="email" class="inp" id="email" placeholder="seu@email.com" autocomplete="email"/>
+    <label class="label">Senha</label>
+    <input type="password" class="inp" id="pass" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn-main" id="btn" onclick="doLogin()">Entrar</button>
+    <div class="divider">ou</div>
+    <div style="text-align:center;font-size:13px;color:#555">
+      Não tem conta? <a href="signup.html" class="link">Criar conta grátis</a>
+    </div>
+    <div class="footer">
+      © 2025 Confere · Todos os direitos reservados
+    </div>
+  </div>
+</div>
+<script>
+const {createClient}=supabase;
+const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable_Ib7zu9sSJmpCIi3Q8j2E2w_6FCR2VVE');
+
+function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.style.display='block';document.getElementById('ok').style.display='none';}
+function showOk(msg){const e=document.getElementById('ok');e.textContent=msg;e.style.display='block';document.getElementById('err').style.display='none';}
+
+async function doLogin(){
+  const email=document.getElementById('email').value.trim();
+  const pass=document.getElementById('pass').value;
+  const btn=document.getElementById('btn');
+  if(!email||!pass){showErr('Preencha e-mail e senha.');return;}
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Entrando...';
+  try{
+    // Busca operador pelo email
+    const {data:op,error}=await sb.from('operators')
+      .select('*, companies(*)')
+      .eq('email',email)
+      .in('access_level',['manager','leader'])
+      .eq('active',true)
+      .single();
+    if(error||!op){showErr('E-mail não encontrado ou sem permissão de acesso.');btn.disabled=false;btn.innerHTML='Entrar';return;}
+    
+    // Verifica senha (simples por enquanto - hash SHA-256)
+    const hash=await hashPassword(pass);
+    if(op.password_hash&&op.password_hash!==hash){
+      showErr('Senha incorreta.');btn.disabled=false;btn.innerHTML='Entrar';return;
+    }
+    
+    // Se não tem senha cadastrada ainda, define esta como a senha
+    if(!op.password_hash){
+      await sb.from('operators').update({password_hash:hash}).eq('id',op.id);
+    }
+
+    // Salva sessão
+    sessionStorage.setItem('confere_user',JSON.stringify({
+      id:op.id,name:op.name,email:op.email,
+      access_level:op.access_level,
+      company_id:op.company_id,
+      company_name:op.companies?.name
+    }));
+    showOk('Login realizado! Redirecionando...');
+    setTimeout(()=>window.location.href='gestor.html',800);
+  }catch(e){
+    showErr('Erro ao conectar. Tente novamente.');
+    btn.disabled=false;btn.innerHTML='Entrar';
+  }
+}
+
+async function hashPassword(password){
+  const msgBuffer=new TextEncoder().encode(password);
+  const hashBuffer=await crypto.subtle.digest('SHA-256',msgBuffer);
+  const hashArray=Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Enter key
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+// Check if already logged in
+const saved=sessionStorage.getItem('confere_user');
+if(saved){window.location.href='gestor.html';}
+</script>
+</body>
+</html>

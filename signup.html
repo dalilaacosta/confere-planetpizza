@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Confere — Criar conta</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',sans-serif;background:#F0F3F9;min-height:100vh;display:flex;flex-direction:column}
+.top-bar{background:#0D7390;height:48px;display:flex;align-items:center;padding:0 24px}
+.logo{color:#fff;font-size:18px;font-weight:900;letter-spacing:.04em}
+.wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#fff;border:1px solid #D0D0D0;width:100%;max-width:480px;padding:36px}
+.title{font-size:20px;font-weight:900;color:#1A237E;margin-bottom:4px}
+.sub{font-size:13px;color:#777;margin-bottom:24px}
+.sec-title{font-size:11px;font-weight:700;color:#1A237E;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 12px;padding-top:16px;border-top:1px solid #EBEBEB}
+.sec-title:first-of-type{margin-top:0;border-top:none;padding-top:0}
+.label{display:block;font-size:11px;font-weight:700;color:#555;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.inp{width:100%;border:1.5px solid #D0D0D0;padding:11px 14px;font-size:14px;font-family:'Roboto',sans-serif;color:#1A1A1A;outline:none;transition:border .15s;margin-bottom:14px}
+.inp:focus{border-color:#1565C0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-main{width:100%;background:#2E7D32;color:#fff;border:none;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;letter-spacing:.04em;text-transform:uppercase;transition:background .15s;margin-top:4px}
+.btn-main:hover{background:#1B5E20}
+.btn-main:disabled{background:#9E9E9E;cursor:not-allowed}
+.err{background:#FFEBEE;border-left:4px solid #C62828;padding:10px 14px;font-size:12px;color:#C62828;font-weight:700;margin-bottom:16px;display:none}
+.ok{background:#E8F5E9;border-left:4px solid #2E7D32;padding:10px 14px;font-size:13px;color:#2E7D32;font-weight:700;margin-bottom:16px;display:none;line-height:1.5}
+.link{color:#1565C0;text-decoration:none;font-weight:700}
+.footer{text-align:center;font-size:12px;color:#999;margin-top:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+.benefit{display:flex;align-items:center;gap:8px;font-size:13px;color:#555;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <span class="logo">☑ Confere</span>
+</div>
+<div class="wrap">
+  <div class="card">
+    <div class="title">Criar conta grátis</div>
+    <div class="sub">Configure sua empresa em menos de 2 minutos</div>
+
+    <div style="background:#F0F4FF;border:1px solid #1565C020;padding:12px 14px;margin-bottom:20px">
+      <div class="benefit">✅ Checklists operacionais ilimitados</div>
+      <div class="benefit">✅ App mobile para sua equipe</div>
+      <div class="benefit">✅ Dashboard em tempo real</div>
+      <div class="benefit">✅ Gratuito para começar</div>
+    </div>
+
+    <div class="err" id="err"></div>
+    <div class="ok" id="ok"></div>
+
+    <div class="sec-title">Dados da Empresa</div>
+    <label class="label">Nome da empresa *</label>
+    <input type="text" class="inp" id="company_name" placeholder="Ex: Restaurante Bom Sabor"/>
+    <div class="row">
+      <div>
+        <label class="label">Segmento</label>
+        <select class="inp" id="segment" style="cursor:pointer">
+          <option value="Restaurante">Restaurante</option>
+          <option value="Pizzaria">Pizzaria</option>
+          <option value="Lanchonete">Lanchonete</option>
+          <option value="Padaria">Padaria</option>
+          <option value="Bar">Bar</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Telefone</label>
+        <input type="tel" class="inp" id="phone" placeholder="(11) 99999-9999"/>
+      </div>
+    </div>
+
+    <div class="sec-title">Acesso do Gestor</div>
+    <label class="label">Seu nome *</label>
+    <input type="text" class="inp" id="mgr_name" placeholder="Seu nome completo"/>
+    <label class="label">E-mail *</label>
+    <input type="email" class="inp" id="email" placeholder="seu@email.com"/>
+    <div class="row">
+      <div>
+        <label class="label">Senha *</label>
+        <input type="password" class="inp" id="pass" placeholder="Mínimo 6 caracteres"/>
+      </div>
+      <div>
+        <label class="label">Confirmar senha *</label>
+        <input type="password" class="inp" id="pass2" placeholder="Repita a senha"/>
+      </div>
+    </div>
+
+    <button class="btn-main" id="btn" onclick="doSignup()">✓ Criar minha conta</button>
+    <div style="text-align:center;font-size:13px;color:#555;margin-top:16px">
+      Já tem conta? <a href="login.html" class="link">Fazer login</a>
+    </div>
+    <div class="footer">© 2025 Confere · Todos os direitos reservados</div>
+  </div>
+</div>
+<script>
+const {createClient}=supabase;
+const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable_Ib7zu9sSJmpCIi3Q8j2E2w_6FCR2VVE');
+
+function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.style.display='block';document.getElementById('ok').style.display='none';}
+function showOk(msg){const e=document.getElementById('ok');e.innerHTML=msg;e.style.display='block';document.getElementById('err').style.display='none';}
+function val(id){return document.getElementById(id).value.trim();}
+
+async function hashPassword(password){
+  const msgBuffer=new TextEncoder().encode(password);
+  const hashBuffer=await crypto.subtle.digest('SHA-256',msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doSignup(){
+  const companyName=val('company_name');
+  const mgrName=val('mgr_name');
+  const email=val('email');
+  const pass=val('pass');
+  const pass2=val('pass2');
+  const phone=val('phone');
+
+  if(!companyName||!mgrName||!email||!pass){showErr('Preencha todos os campos obrigatórios (*).');return;}
+  if(pass.length<6){showErr('A senha deve ter pelo menos 6 caracteres.');return;}
+  if(pass!==pass2){showErr('As senhas não coincidem.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('E-mail inválido.');return;}
+
+  const btn=document.getElementById('btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Criando conta...';
+
+  try{
+    // Verifica se email já existe
+    const {data:existing}=await sb.from('operators').select('id').eq('email',email).single();
+    if(existing){showErr('Este e-mail já está cadastrado. Faça login.');btn.disabled=false;btn.innerHTML='✓ Criar minha conta';return;}
+
+    // Cria empresa
+    const {data:company,error:compErr}=await sb.from('companies').insert({
+      name:companyName,email,phone:phone||null,plan:'basic'
+    }).select().single();
+    if(compErr)throw compErr;
+
+    // Cria unidade padrão
+    const {data:unit}=await sb.from('units').insert({
+      name:companyName,company_id:company.id,active:true
+    }).select().single();
+
+    // Cria gestor
+    const hash=await hashPassword(pass);
+    const initials=(mgrName.split(' ').map(n=>n[0]).join('').toUpperCase()).slice(0,2);
+    await sb.from('operators').insert({
+      name:mgrName,initials,role:'Gestor',pin:'0000',
+      email,password_hash:hash,
+      access_level:'manager',active:true,
+      company_id:company.id,unit_id:unit.id
+    });
+
+    showOk('✅ Conta criada com sucesso!<br>Redirecionando para o painel...');
+    
+    // Salva sessão
+    sessionStorage.setItem('confere_user',JSON.stringify({
+      name:mgrName,email,access_level:'manager',
+      company_id:company.id,company_name:companyName
+    }));
+    setTimeout(()=>window.location.href='gestor.html',1500);
+  }catch(e){
+    showErr('Erro ao criar conta: '+( e.message||'Tente novamente.'));
+    btn.disabled=false;btn.innerHTML='✓ Criar minha conta';
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doSignup();});
+</script>
+</body>
+</html>
