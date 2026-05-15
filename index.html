@@ -684,8 +684,8 @@ function renderExec(){
     if(item.type==='check'){
       const ck=sChecks[item.id];
       const btnRow=div({display:'flex',gap:10});
-      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:true}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===true?'#2E7D32':'#fff',color:ck===true?'#fff':'#2E7D32',border:`2px solid #2E7D32`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✓  Feito'));
-      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:false}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===false?C.red:'#fff',color:ck===false?'#fff':C.red,border:`2px solid ${C.red}`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✕  Não Feito'));
+      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:true}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===true?'#2E7D32':'#fff',color:ck===true?'#fff':'#2E7D32',border:`2px solid #2E7D32`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✓  Sim'));
+      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:false}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===false?C.red:'#fff',color:ck===false?'#fff':C.red,border:`2px solid ${C.red}`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✕  Não'));
       box.appendChild(btnRow);
     }
     if(item.type==='photo'){
