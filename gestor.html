@@ -536,11 +536,11 @@ function renderUnits(){
         }},isActive?'Desativar':'Ativar'),
         h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
           if(opCount>0){alert('Não é possível excluir uma unidade com operadores cadastrados. Transfira ou remova os operadores primeiro.');return;}
-          if(confirm('Excluir a unidade "'+u.name+'"? Esta ação não pode ser desfeita.')){{
+          if(confirm('Excluir a unidade "'+u.name+'"? Esta ação não pode ser desfeita.')){
             await sb.from('units').delete().eq('id',u.id);
             await reload();
             ss({success:'Unidade excluída!'});setTimeout(()=>ss({success:null}),3000);
-          }}
+          }
         }},'Excluir')
       )
     ));
@@ -609,7 +609,7 @@ function renderOperators(){
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'operator',modalData:{...op}})},'Editar'),
         h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar'),
-        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir operador "'+op.name+'"? Esta ação não pode ser desfeita.')){{await sb.from('operators').delete().eq('id',op.id);await reload();ss({success:'Operador excluído!'});setTimeout(()=>ss({success:null}),3000);}}}}},'Excluir')
+        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir operador "'+op.name+'"? Esta ação não pode ser desfeita.')){await sb.from('operators').delete().eq('id',op.id);await reload();ss({success:'Operador excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
       )
     );
     tbody.appendChild(tr);
@@ -703,7 +703,7 @@ function renderChecklists(){
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
           h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir o checklist "'+cl.name+'"? Todos os dados serão perdidos.')){{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}}}},'Excluir')
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir o checklist "'+cl.name+'"? Todos os dados serão perdidos.')){await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
         )
       );
       tbody.appendChild(tr);
