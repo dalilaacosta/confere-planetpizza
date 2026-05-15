@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Confere — Painel do Gestor</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-size:14px}
+#root{min-height:100vh;display:flex;flex-direction:column}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeIn .2s ease}
+
+/* Top bar */
+.top-bar{background:#0D7390;height:48px;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:100}
+.top-bar-logo{color:#fff;font-size:16px;font-weight:900;letter-spacing:.04em}
+.top-bar-sub{color:rgba(255,255,255,.6);font-size:12px}
+.top-bar-user{margin-left:auto;display:flex;align-items:center;gap:10px}
+.top-bar-name{color:#fff;font-size:13px;font-weight:700}
+.top-bar-logout{background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;letter-spacing:.05em;font-family:'Roboto',sans-serif;text-transform:uppercase}
+
+/* Nav tabs */
+.nav{background:#1A237E;display:flex;overflow-x:auto;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.1)}
+.nav::-webkit-scrollbar{display:none}
+.nav-tab{border:none;background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:700;padding:12px 18px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s;font-family:'Roboto',sans-serif}
+.nav-tab.active{color:#fff;border-bottom-color:#FFD54F}
+.nav-tab:hover:not(.active){color:rgba(255,255,255,.85)}
+
+/* Layout */
+.content{padding:16px;max-width:1200px;margin:0 auto;width:100%}
+
+/* Cards */
+.card{background:#fff;border:1px solid #D0D0D0;padding:16px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:700;color:#777;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid #D0D0D0;padding:14px 16px;border-left:4px solid #0D7390}
+.kpi-val{font-size:28px;font-weight:900;color:#1A1A1A;line-height:1}
+.kpi-label{font-size:11px;font-weight:700;color:#777;letter-spacing:.06em;text-transform:uppercase;margin-top:4px}
+
+/* Section header */
+.sec{background:#1A237E;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.sec span{color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.sec-btn{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;letter-spacing:.04em;font-family:'Roboto',sans-serif;text-transform:uppercase}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid #D0D0D0;border-top:none}
+.tbl th{background:#F5F5F5;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#555;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #D0D0D0}
+.tbl td{padding:10px 14px;border-bottom:1px solid #EBEBEB;vertical-align:middle;font-size:13px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#F5F7FF}
+
+/* Buttons */
+.btn{border:none;cursor:pointer;font-family:'Roboto',sans-serif;font-weight:700;transition:all .12s;outline:none}
+.btn:active{filter:brightness(.9)}
+.btn-primary{background:#1565C0;color:#fff;padding:10px 18px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.btn-success{background:#2E7D32;color:#fff;padding:10px 18px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.btn-danger{background:#C62828;color:#fff;padding:8px 14px;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.btn-gray{background:#9E9E9E;color:#fff;padding:10px 18px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.btn-sm{padding:5px 10px;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+
+/* Tags */
+.tag{font-size:10px;font-weight:700;padding:3px 8px;letter-spacing:.04em;border-radius:2px;display:inline-block}
+.tag-green{background:#E8F5E9;color:#2E7D32}
+.tag-red{background:#FFEBEE;color:#C62828}
+.tag-blue{background:#E3F2FD;color:#1565C0}
+.tag-amber{background:#FFF8E1;color:#B76E00}
+.tag-gray{background:#ECEFF1;color:#546E7A}
+
+/* Progress */
+.prog-track{height:6px;background:#EBEBEB;overflow:hidden}
+.prog-fill{height:100%;transition:width .4s}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:700;color:#555;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.form-inp{background:#fff;border:1.5px solid #D0D0D0;color:#1A1A1A;font-family:'Roboto',sans-serif;font-size:14px;outline:none;width:100%;padding:10px 12px;transition:border .15s}
+.form-inp:focus{border-color:#1565C0}
+.form-select{background:#fff;border:1.5px solid #D0D0D0;color:#1A1A1A;font-family:'Roboto',sans-serif;font-size:14px;outline:none;width:100%;padding:10px 12px;cursor:pointer}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:#fff;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+.modal-hdr{background:#1A237E;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.modal-hdr span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.modal-close{background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;font-family:'Roboto',sans-serif}
+.modal-body{padding:18px}
+.modal-footer{padding:14px 18px;border-top:1px solid #EBEBEB;display:flex;gap:8px;justify-content:flex-end}
+
+/* Spinner */
+.spinner{width:32px;height:32px;border:3px solid #DDD;border-top-color:#0D7390;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+.err-bar{background:#FFEBEE;border-left:4px solid #C62828;padding:10px 14px;font-size:12px;color:#C62828;font-weight:700;margin-bottom:12px}
+.ok-bar{background:#E8F5E9;border-left:4px solid #2E7D32;padding:10px 14px;font-size:12px;color:#2E7D32;font-weight:700;margin-bottom:12px}
+
+/* Steps editor */
+.step-card{background:#F5F5F5;border:1px solid #D0D0D0;padding:12px;margin-bottom:8px}
+.item-row-edit{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+
+/* Login */
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{background:#fff;border:1px solid #D0D0D0;width:100%;max-width:400px;padding:32px}
+.pin-boxes{display:flex;justify-content:center;gap:12px;margin:20px 0}
+.pin-box{width:56px;height:68px;border:2px solid #D0D0D0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;border-radius:4px;transition:all .15s}
+
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .content{padding:10px}
+  .tbl td,.tbl th{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {createClient}=supabase;
+const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable_Ib7zu9sSJmpCIi3Q8j2E2w_6FCR2VVE');
+
+const C={teal:"#0D7390",navy:"#1A237E",blue:"#1565C0",green:"#2E7D32",red:"#C62828",amber:"#F9A825",bd:"#D0D0D0",bg:"#F2F2F2",white:"#fff",tx:"#1A1A1A",t2:"#444",t3:"#777"};
+
+let state={
+  screen:'loading',
+  manager:null,selMgr:null,pin:'',pinErr:false,
+  operators:[],checklists:[],units:[],executions:[],issues:[],
+  tab:'overview',
+  modal:null,modalData:{},
+  saving:false,error:null,success:null,
+};
+
+function ss(p){state={...state,...p};render();}
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+async function init(){
+  try{
+    const [opsR,clsR,unitsR]=await Promise.all([
+      sb.from('operators').select('*').eq('active',true).order('name'),
+      sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').order('sector'),
+      sb.from('units').select('*').order('name'),
+    ]);
+    const cls=clsR.data||[];
+    cls.forEach(cl=>{
+      cl.checklist_steps.sort((a,b)=>a.position-b.position);
+      cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));
+    });
+    const managers=(opsR.data||[]).filter(o=>['manager','leader'].includes(o.access_level));
+    const execs=await loadExecs();
+    const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
+    ss({screen:'login',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],managers});
+  }catch(e){ss({screen:'login',error:'Erro ao conectar.'});}
+}
+
+async function loadExecs(){
+  const d=new Date();d.setHours(0,0,0,0);
+  const {data}=await sb.from('executions').select('*, operators(id,name), checklists(name,sector)').gte('started_at',d.toISOString()).order('started_at',{ascending:false});
+  return data||[];
+}
+
+async function reload(){
+  const [opsR,clsR,unitsR,issR]=await Promise.all([
+    sb.from('operators').select('*').order('name'),
+    sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').order('sector'),
+    sb.from('units').select('*').order('name'),
+    sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false}),
+  ]);
+  const cls=clsR.data||[];
+  cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
+  const execs=await loadExecs();
+  ss({operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issR.data||[]});
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+async function saveOperator(data,id){
+  ss({saving:true});
+  try{
+    if(id){await sb.from('operators').update(data).eq('id',id);}
+    else{await sb.from('operators').insert(data);}
+    await reload();
+    ss({saving:false,modal:null,success:id?'Operador atualizado!':'Operador cadastrado!',modalData:{}});
+    setTimeout(()=>ss({success:null}),3000);
+  }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
+}
+
+async function toggleOperator(id,active){
+  await sb.from('operators').update({active}).eq('id',id);
+  await reload();
+}
+
+async function saveChecklist(data,id){
+  ss({saving:true});
+  try{
+    if(id){await sb.from('checklists').update(data).eq('id',id);}
+    else{await sb.from('checklists').insert(data);}
+    await reload();
+    ss({saving:false,modal:null,success:id?'Checklist atualizado!':'Checklist criado!',modalData:{}});
+    setTimeout(()=>ss({success:null}),3000);
+  }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
+}
+
+async function toggleChecklist(id,active){
+  await sb.from('checklists').update({active}).eq('id',id);
+  await reload();
+}
+
+async function resolveIssue(id){
+  await sb.from('issues').update({status:'resolved',resolved_at:new Date().toISOString(),resolved_by:state.manager?.name}).eq('id',id);
+  await reload();
+}
+
+async function addStep(checklistId,position){
+  ss({saving:true});
+  const {data}=await sb.from('checklist_steps').insert({checklist_id:checklistId,position}).select().single();
+  await reload();
+  ss({saving:false});
+  return data;
+}
+
+async function deleteStep(stepId){
+  await sb.from('checklist_steps').delete().eq('id',stepId);
+  await reload();
+}
+
+async function saveItem(stepId,type,label,position,itemId){
+  if(itemId){await sb.from('step_items').update({type,label}).eq('id',itemId);}
+  else{await sb.from('step_items').insert({step_id:stepId,type,label,position});}
+  await reload();
+}
+
+async function deleteItem(itemId){
+  await sb.from('step_items').delete().eq('id',itemId);
+  await reload();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function h(tag,attrs,...ch){
+  const el=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==='style'&&typeof v==='object')Object.assign(el.style,v);
+    else if(k.startsWith('on')&&typeof v==='function')el.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==='className')el.className=v;
+    else if(k==='disabled')el.disabled=v;
+    else if(k==='innerHTML')el.innerHTML=v;
+    else if(k in el)el[k]=v;
+    else el.setAttribute(k,v);
+  });
+  ch.flat(Infinity).forEach(c=>{if(c==null||c===false)return;el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return el;
+}
+const div=(s,...c)=>h('div',{style:s},...c);
+const sec=(label,btnLabel,btnClick)=>{
+  const d=h('div',{className:'sec'});
+  d.appendChild(h('span',{},label));
+  if(btnLabel)d.appendChild(h('button',{className:'sec-btn',onClick:btnClick},btnLabel));
+  return d;
+};
+function pct(n,t){return t>0?Math.round((n/t)*100):0;}
+function pctColor(p){return p>=80?C.green:p>=50?C.amber:C.red;}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function renderLogin(){
+  const {selMgr,pinErr,error,managers=[]}=state;
+  const root=div({display:'flex',flexDirection:'column',minHeight:'100vh'});
+  root.appendChild(h('div',{className:'top-bar'},
+    h('div',{style:{fontSize:16,fontWeight:900,color:'#fff',letterSpacing:'.04em'}},'☑ Confere'),
+    h('span',{style:{color:'rgba(255,255,255,.6)',fontSize:12,marginLeft:8}},'· Painel do Gestor')
+  ));
+
+  const wrap=div({className:'login-wrap'});
+  const card=div({className:'login-card'});
+  card.appendChild(div({fontSize:18,fontWeight:900,color:C.navy,marginBottom:4,letterSpacing:'.02em'},'ACESSO RESTRITO'));
+  card.appendChild(div({fontSize:13,color:C.t3,marginBottom:20},'Somente gestores e líderes autorizados.'));
+  if(error)card.appendChild(h('div',{className:'err-bar'},error));
+
+  if(!selMgr){
+    card.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:10}},'Selecione seu perfil'));
+    managers.forEach(m=>{
+      card.appendChild(h('button',{className:'btn',onClick:()=>ss({selMgr:m,pin:''}),
+        style:{background:C.bg,border:`1.5px solid ${C.bd}`,padding:'12px 16px',display:'flex',
+          alignItems:'center',gap:12,width:'100%',cursor:'pointer',textAlign:'left',marginBottom:8}},
+        div({width:40,height:40,borderRadius:'50%',background:C.navy,display:'flex',alignItems:'center',
+          justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},m.initials),
+        div({flex:1},
+          div({fontSize:15,fontWeight:700,color:C.tx},m.name),
+          div({fontSize:12,color:C.t3,marginTop:2},m.access_level==='manager'?'Gestor':'Líder')
+        ),
+        h('span',{style:{color:C.t3,fontSize:18}},'›')
+      ));
+    });
+  } else {
+    card.appendChild(div({display:'flex',alignItems:'center',gap:12,padding:'12px',background:C.bg,border:`1px solid ${C.bd}`,marginBottom:16},
+      div({width:40,height:40,borderRadius:'50%',background:C.navy,display:'flex',alignItems:'center',
+        justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},selMgr.initials),
+      div({flex:1},div({fontSize:15,fontWeight:700,color:C.tx},selMgr.name),div({fontSize:12,color:C.t3,marginTop:2},selMgr.access_level==='manager'?'Gestor':'Líder')),
+      h('button',{className:'btn',onClick:()=>ss({selMgr:null,pin:''}),
+        style:{background:C.white,border:`1px solid ${C.bd}`,color:C.t3,fontSize:11,padding:'5px 10px',
+          cursor:'pointer',fontFamily:"'Roboto',sans-serif",textTransform:'uppercase',letterSpacing:'.04em'}},'Trocar')
+    ));
+
+    card.appendChild(div({fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:8},'PIN de Acesso'));
+
+    const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:10,marginBottom:8,cursor:'text'});
+    const boxes=[];
+    for(let i=0;i<4;i++){
+      const box=div({className:'pin-box'});
+      box.style.borderColor=C.bd;
+      boxes.push(box);pinWrap.appendChild(box);
+    }
+    const errMsg=div({textAlign:'center',color:C.red,fontSize:12,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO');
+    const inp=document.createElement('input');
+    inp.type='tel';inp.inputMode='numeric';inp.maxLength=4;inp.autocomplete='off';
+    Object.assign(inp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
+    function updateBoxes(val,isErr){
+      boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});
+    }
+    inp.addEventListener('input',e=>{
+      const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);
+      e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
+      if(val.length===4){
+        const op=state.operators.find(o=>o.pin===val&&o.id===selMgr.id&&['manager','leader'].includes(o.access_level));
+        if(op){ss({manager:op,screen:'dashboard',pin:'',selMgr:null});}
+        else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{inp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
+      }
+    });
+    pinWrap.appendChild(inp);pinWrap.addEventListener('click',()=>inp.focus());
+    card.appendChild(pinWrap);card.appendChild(errMsg);
+    setTimeout(()=>inp.focus(),150);
+  }
+
+  wrap.appendChild(card);root.appendChild(wrap);
+  return root;
+}
+
+// ── TAB: OVERVIEW ─────────────────────────────────────────────────────────
+function renderOverview(){
+  const {executions,checklists,operators,issues}=state;
+  const today=executions;
+  const done=today.filter(e=>e.status==='done').length;
+  const inProg=today.filter(e=>e.status==='in_progress').length;
+  const totalPossible=checklists.filter(c=>c.active).length;
+  const openIssues=issues.filter(i=>i.status==='open').length;
+  const activeOps=operators.filter(o=>o.active).length;
+
+  const frag=document.createDocumentFragment();
+
+  // KPIs
+  const kpis=div({className:'kpi-grid'});
+  [{val:done+'/'+totalPossible,label:'Checklists Hoje',color:C.teal},
+   {val:inProg,label:'Em Andamento',color:C.amber},
+   {val:openIssues,label:'Problemas Abertos',color:C.red},
+   {val:activeOps,label:'Operadores Ativos',color:C.navy},
+  ].forEach(k=>{
+    kpis.appendChild(div({className:'kpi',style:{borderLeftColor:k.color}},
+      div({className:'kpi-val'},String(k.val)),
+      div({className:'kpi-label'},k.label)
+    ));
+  });
+  frag.appendChild(kpis);
+
+  // Issues abertas
+  if(openIssues>0){
+    frag.appendChild(sec('⚠️  Problemas em Aberto',openIssues));
+    const issTable=h('table',{className:'tbl'});
+    issTable.appendChild(h('thead',{},h('tr',{},h('th',{},'Checklist'),h('th',{},'Reportado por'),h('th',{},'Descrição'),h('th',{},'Data'),h('th',{},'Ação'))));
+    const tbody=h('tbody',{});
+    issues.filter(i=>i.status==='open').forEach(iss=>{
+      const tr=h('tr',{},
+        h('td',{style:{fontWeight:700,color:C.navy}},iss.checklists?.name||'—'),
+        h('td',{},iss.operators?.name||'—'),
+        h('td',{},iss.description||(iss.photo_url?'📷 Foto anexada':'—')),
+        h('td',{style:{color:C.t3,fontSize:12}},new Date(iss.created_at).toLocaleDateString('pt-BR')),
+        h('td',{},h('button',{className:'btn btn-success btn-sm',onClick:()=>resolveIssue(iss.id)},'✓ Resolver'))
+      );
+      tbody.appendChild(tr);
+    });
+    issTable.appendChild(tbody);
+    frag.appendChild(issTable);
+    frag.appendChild(div({height:'16px'}));
+  }
+
+  // Atividade recente
+  frag.appendChild(sec('Atividade de Hoje'));
+  const actTable=h('table',{className:'tbl'});
+  actTable.appendChild(h('thead',{},h('tr',{},h('th',{},'Operador'),h('th',{},'Checklist'),h('th',{},'Setor'),h('th',{},'Status'),h('th',{},'Horário'))));
+  const tbody2=h('tbody',{});
+  if(today.length===0){
+    tbody2.appendChild(h('tr',{},h('td',{colSpan:5,style:{textAlign:'center',color:C.t3,padding:'24px'}},'Nenhuma atividade hoje ainda.')));
+  }
+  today.slice(0,20).forEach(e=>{
+    const isDone=e.status==='done';
+    const tr=h('tr',{},
+      h('td',{style:{fontWeight:700}},e.operators?.name||'—'),
+      h('td',{},e.checklists?.name||'—'),
+      h('td',{},h('span',{className:'tag tag-gray'},e.checklists?.sector||'—')),
+      h('td',{},h('span',{className:`tag ${isDone?'tag-green':e.status==='in_progress'?'tag-amber':'tag-gray'}`},isDone?'CONCLUÍDO':e.status==='in_progress'?'EM ANDAMENTO':'ABANDONADO')),
+      h('td',{style:{color:C.t3,fontSize:12}},new Date(e.started_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}))
+    );
+    tbody2.appendChild(tr);
+  });
+  actTable.appendChild(tbody2);
+  frag.appendChild(actTable);
+
+  return frag;
+}
+
+// ── TAB: OPERATORS ────────────────────────────────────────────────────────
+function renderOperators(){
+  const {operators,units,modal,modalData,saving,error,success}=state;
+  const frag=document.createDocumentFragment();
+  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
+  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
+
+  frag.appendChild(sec('Operadores Cadastrados',operators.length+' total','+ Novo Operador',()=>ss({modal:'operator',modalData:{access_level:'operator',active:true}})));
+
+  const tbl=h('table',{className:'tbl'});
+  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome'),h('th',{},'Setor'),h('th',{},'Unidade'),h('th',{},'Nível'),h('th',{},'PIN'),h('th',{},'Status'),h('th',{},'Ações'))));
+  const tbody=h('tbody',{});
+  operators.forEach(op=>{
+    const unit=units.find(u=>u.id===op.unit_id);
+    const tr=h('tr',{},
+      h('td',{},div({display:'flex',alignItems:'center',gap:10},
+        div({width:32,height:32,borderRadius:'50%',background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0},op.initials),
+        h('span',{style:{fontWeight:700}},op.name)
+      )),
+      h('td',{},op.role||'—'),
+      h('td',{},unit?.name||'—'),
+      h('td',{},h('span',{className:`tag ${op.access_level==='manager'?'tag-blue':op.access_level==='leader'?'tag-amber':'tag-gray'}`},op.access_level==='manager'?'GESTOR':op.access_level==='leader'?'LÍDER':'OPERADOR')),
+      h('td',{style:{fontFamily:'monospace',letterSpacing:'.1em'}},op.pin),
+      h('td',{},h('span',{className:`tag ${op.active?'tag-green':'tag-red'}`},op.active?'ATIVO':'INATIVO')),
+      h('td',{},
+        h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'operator',modalData:{...op}})},'Editar'),
+        h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar')
+      )
+    );
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  frag.appendChild(tbl);
+
+  // Modal operador
+  if(modal==='operator'){
+    const md=modalData;
+    const isEdit=!!md.id;
+    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal'});
+    m.appendChild(div({className:'modal-hdr'},
+      h('span',{},isEdit?'Editar Operador':'Novo Operador'),
+      h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
+    ));
+    const mb=div({className:'modal-body'});
+
+    const fields={};
+    function field(label,key,type='text',options=null){
+      const g=div({className:'form-group'});
+      g.appendChild(h('label',{className:'form-label'},label));
+      if(options){
+        const sel=document.createElement('select');sel.className='form-select';
+        options.forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(md[key]===v)o.selected=true;sel.appendChild(o);});
+        sel.addEventListener('change',e=>{md[key]=e.target.value;});
+        fields[key]=sel;g.appendChild(sel);
+      } else {
+        const inp=document.createElement('input');inp.type=type;inp.className='form-inp';
+        inp.value=md[key]||'';inp.addEventListener('input',e=>{md[key]=e.target.value;});
+        fields[key]=inp;g.appendChild(inp);
+      }
+      return g;
+    }
+
+    mb.appendChild(div({className:'form-row'},
+      field('Nome completo','name'),
+      field('Iniciais (2 letras)','initials')
+    ));
+    mb.appendChild(div({className:'form-row'},
+      field('Setor','role'),
+      field('PIN (4 dígitos)','pin','tel')
+    ));
+    mb.appendChild(div({className:'form-row'},
+      field('Unidade','unit_id','text',[['','-Selecione-'],...units.map(u=>[u.id,u.name])]),
+      field('Nível de acesso','access_level','text',[['operator','Operador'],['leader','Líder'],['manager','Gestor']])
+    ));
+
+    m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
+        const data={name:md.name,initials:(md.initials||'').toUpperCase().slice(0,2),role:md.role,pin:md.pin,unit_id:md.unit_id||null,access_level:md.access_level||'operator',active:md.active!==false};
+        saveOperator(data,md.id);
+      }},saving?'Salvando...':'Salvar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
+  return frag;
+}
+
+// ── TAB: CHECKLISTS ───────────────────────────────────────────────────────
+function renderChecklists(){
+  const {checklists,modal,modalData,saving,error,success}=state;
+  const frag=document.createDocumentFragment();
+  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
+  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
+
+  const sectors=[...new Set(checklists.map(c=>c.sector||'Geral'))].sort();
+
+  sectors.forEach(sector=>{
+    const sCls=checklists.filter(c=>(c.sector||'Geral')===sector);
+    frag.appendChild(sec(sector.toUpperCase()+' — '+sCls.length+' checklists','+ Novo',()=>ss({modal:'checklist',modalData:{sector,frequency:'Diário',active:true}})));
+    const tbl=h('table',{className:'tbl'});
+    tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Checklist'),h('th',{},'Horário'),h('th',{},'Frequência'),h('th',{},'Etapas'),h('th',{},'Status'),h('th',{},'Ações'))));
+    const tbody=h('tbody',{});
+    sCls.forEach(cl=>{
+      const totalItems=cl.checklist_steps.reduce((a,s)=>a+s.step_items.length,0);
+      const tr=h('tr',{},
+        h('td',{},div({display:'flex',alignItems:'center',gap:8},
+          h('span',{style:{fontSize:18}},cl.icon||'📋'),
+          h('span',{style:{fontWeight:700}},cl.name)
+        )),
+        h('td',{style:{color:C.t3,fontSize:12}},(cl.start_time||'--')+' – '+(cl.deadline||'--')),
+        h('td',{},h('span',{className:'tag tag-gray'},cl.frequency||'Diário')),
+        h('td',{},cl.checklist_steps.length+' etapas · '+totalItems+' itens'),
+        h('td',{},h('span',{className:`tag ${cl.active?'tag-green':'tag-red'}`},cl.active?'ATIVO':'INATIVO')),
+        h('td',{},
+          h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
+          h('button',{className:'btn btn-gray btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
+          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar')
+        )
+      );
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);frag.appendChild(tbl);
+    frag.appendChild(div({height:'16px'}));
+  });
+
+  // Botão adicionar primeiro checklist
+  frag.appendChild(div({textAlign:'right',marginBottom:16},
+    h('button',{className:'btn btn-primary',onClick:()=>ss({modal:'checklist',modalData:{frequency:'Diário',active:true,sector:'Geral'}})},'+ Novo Checklist')
+  ));
+
+  // Modal checklist (info básica)
+  if(modal==='checklist'){
+    const md=modalData;const isEdit=!!md.id;
+    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal'});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Checklist':'Novo Checklist'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+
+    function inp(label,key,type='text'){
+      const g=div({className:'form-group'});
+      g.appendChild(h('label',{className:'form-label'},label));
+      const el=document.createElement('input');el.type=type;el.className='form-inp';el.value=md[key]||'';
+      el.addEventListener('input',e=>{md[key]=e.target.value;});
+      g.appendChild(el);return g;
+    }
+    function sel(label,key,opts){
+      const g=div({className:'form-group'});
+      g.appendChild(h('label',{className:'form-label'},label));
+      const el=document.createElement('select');el.className='form-select';
+      opts.forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(md[key]===v)o.selected=true;el.appendChild(o);});
+      el.addEventListener('change',e=>{md[key]=e.target.value;});
+      g.appendChild(el);return g;
+    }
+
+    mb.appendChild(div({className:'form-row'},inp('Nome do Checklist','name'),inp('Ícone (emoji)','icon')));
+    mb.appendChild(div({className:'form-row'},
+      sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha']]),
+      sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']])
+    ));
+    mb.appendChild(div({className:'form-row'},inp('Horário início','start_time','time'),inp('Prazo','deadline','time')));
+
+    m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
+        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:md.active!==false};
+        saveChecklist(data,md.id);
+      }},saving?'Salvando...':'Salvar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
+  // Modal etapas e itens
+  if(modal==='steps'){
+    const cl=modalData;
+    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'680px'}});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},'Etapas e Itens — '+cl.name),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+
+    if(!cl.checklist_steps||cl.checklist_steps.length===0){
+      mb.appendChild(div({textAlign:'center',color:C.t3,padding:'24px'},'Nenhuma etapa ainda.'));
+    }
+
+    cl.checklist_steps.forEach((step,si)=>{
+      const sc=div({className:'step-card'});
+      sc.appendChild(div({display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10},
+        h('span',{style:{fontSize:12,fontWeight:700,color:C.navy,letterSpacing:'.06em',textTransform:'uppercase'}},'Etapa '+(si+1)),
+        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover esta etapa e todos os seus itens?'))await deleteStep(step.id);}},'Remover Etapa')
+      ));
+
+      step.step_items.forEach(item=>{
+        const ir=div({className:'item-row-edit'});
+        const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='130px';typeSelect.style.fontSize='12px';
+        [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
+          const o=document.createElement('option');o.value=v;o.textContent=l;if(item.type===v)o.selected=true;typeSelect.appendChild(o);
+        });
+        const labelInp=document.createElement('input');labelInp.type='text';labelInp.className='form-inp';labelInp.value=item.label;labelInp.style.fontSize='13px';
+        ir.appendChild(typeSelect);ir.appendChild(labelInp);
+        ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{await saveItem(step.id,typeSelect.value,labelInp.value,item.position,item.id);}},  '💾'));
+        ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover item?'))await deleteItem(item.id);}},'×'));
+        sc.appendChild(ir);
+      });
+
+      // Adicionar novo item
+      const newRow=div({className:'item-row-edit',style:{marginTop:8,paddingTop:8,borderTop:`1px dashed ${C.bd}`}});
+      const newType=document.createElement('select');newType.className='form-select';newType.style.width='130px';newType.style.fontSize='12px';
+      [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;newType.appendChild(o);});
+      const newLabel=document.createElement('input');newLabel.type='text';newLabel.className='form-inp';newLabel.placeholder='Descrição do novo item...';newLabel.style.fontSize='13px';
+      newRow.appendChild(newType);newRow.appendChild(newLabel);
+      newRow.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
+        if(!newLabel.value.trim())return;
+        await saveItem(step.id,newType.value,newLabel.value.trim(),step.step_items.length+1,null);
+        newLabel.value='';
+      }},'+'));
+      sc.appendChild(newRow);
+      mb.appendChild(sc);
+    });
+
+    mb.appendChild(h('button',{className:'btn btn-primary',style:{marginTop:8},onClick:async()=>{
+      await addStep(cl.id,cl.checklist_steps.length+1);
+    }},'+ Adicionar Nova Etapa'));
+
+    m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Fechar')));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
+  return frag;
+}
+
+// ── TAB: SETTINGS ─────────────────────────────────────────────────────────
+function renderSettings(){
+  const {units,modal,modalData,saving}=state;
+  const frag=document.createDocumentFragment();
+  frag.appendChild(sec('Unidades Cadastradas',units.length+' unidades','+ Nova Unidade',()=>ss({modal:'unit',modalData:{}})));
+  const tbl=h('table',{className:'tbl'});
+  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'ID'))));
+  const tbody=h('tbody',{});
+  units.forEach(u=>{
+    tbody.appendChild(h('tr',{},h('td',{style:{fontWeight:700}},u.name),h('td',{style:{color:C.t3,fontSize:11,fontFamily:'monospace'}},u.id)));
+  });
+  tbl.appendChild(tbody);frag.appendChild(tbl);
+
+  if(modal==='unit'){
+    const md=modalData;
+    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'400px'}});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},'Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+    const g=div({className:'form-group'});
+    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade'));
+    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';inp.placeholder='Ex: Planet Shopping ABC';
+    inp.addEventListener('input',e=>{md.name=e.target.value;});
+    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
+        if(!md.name)return;ss({saving:true});
+        await sb.from('units').insert({name:md.name});
+        await reload();ss({saving:false,modal:null,modalData:{},success:'Unidade criada!'});
+        setTimeout(()=>ss({success:null}),3000);
+      }},saving?'Salvando...':'Salvar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+  return frag;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const {manager,tab}=state;
+  const root=h('div',{style:{display:'flex',flexDirection:'column',minHeight:'100vh'}});
+
+  // Top bar
+  const tb=h('div',{className:'top-bar'});
+  tb.appendChild(h('span',{className:'top-bar-logo'},'☑ Confere'));
+  tb.appendChild(h('span',{className:'top-bar-sub'},'· Painel do Gestor'));
+  const userDiv=div({className:'top-bar-user'});
+  userDiv.appendChild(h('span',{className:'top-bar-name'},manager.name));
+  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:()=>ss({manager:null,screen:'login'})},'Sair'));
+  tb.appendChild(userDiv);
+  root.appendChild(tb);
+
+  // Nav
+  const nav=h('div',{className:'nav'});
+  [['overview','🏠  Visão Geral'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
+    nav.appendChild(h('button',{className:`nav-tab${tab===id?' active':''}`,onClick:()=>ss({tab:id,modal:null,error:null,success:null})},label));
+  });
+  root.appendChild(nav);
+
+  // Content
+  const content=div({className:'content fade'});
+  if(tab==='overview')content.appendChild(renderOverview());
+  else if(tab==='operators')content.appendChild(renderOperators());
+  else if(tab==='checklists')content.appendChild(renderChecklists());
+  else if(tab==='settings')content.appendChild(renderSettings());
+  root.appendChild(content);
+
+  return root;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render(){
+  const root=document.getElementById('root');root.innerHTML='';
+  let c;
+  if(state.screen==='loading'){
+    c=div({display:'flex',flexDirection:'column',minHeight:'100vh'},
+      h('div',{className:'top-bar'},h('span',{style:{color:'#fff',fontWeight:900,fontSize:16}},'☑ Confere')),
+      div({flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16},
+        h('div',{className:'spinner'}),
+        div({fontSize:13,color:'#888',fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')
+      )
+    );
+  } else if(state.screen==='login'){c=renderLogin();}
+  else if(state.screen==='dashboard'){c=renderDashboard();}
+  if(c)root.appendChild(c);
+}
+
+render();init();
+</script>
+</body>
+</html>
