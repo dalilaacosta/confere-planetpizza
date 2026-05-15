@@ -416,172 +416,150 @@ function freqLabel(f){return{monthly:'Mensal',quarterly:'Trimestral','semi-annua
 
 // ── TAB: OVERVIEW ─────────────────────────────────────────────────────────
 function renderOverview(){
-  const {executions,checklists,operators,issues}=state;
+  const {executions,checklists,operators,issues,documents,manager,units}=state;
   const today=executions;
   const done=today.filter(e=>e.status==='done').length;
   const inProg=today.filter(e=>e.status==='in_progress').length;
-  const totalPossible=checklists.filter(c=>c.active).length;
+  const totalCls=checklists.filter(c=>c.active).length;
   const openIssues=issues.filter(i=>i.status==='open').length;
   const activeOps=operators.filter(o=>o.active).length;
-
+  const docsAlert=documents.filter(d=>{const s=docStatus(d);return s.days<=(d.remind_days_before||30);});
+  const pct=totalCls>0?Math.round((done/totalCls)*100):0;
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
   const frag=document.createDocumentFragment();
 
-  // KPIs
-  const kpis=div({className:'kpi-grid'});
-  [{val:done+'/'+totalPossible,label:'Checklists Hoje',color:C.teal},
-   {val:inProg,label:'Em Andamento',color:C.amber},
-   {val:openIssues,label:'Problemas Abertos',color:C.red},
-   {val:activeOps,label:'Operadores Ativos',color:C.navy},
+  // Welcome header
+  frag.appendChild(div({background:C.navy,padding:'16px',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8},
+    div({},
+      div({fontSize:12,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase'},'Olá, '+(manager?.name?.split(' ')[0]||'')+'!'),
+      div({fontSize:15,color:'#fff',fontWeight:700,marginTop:2},dateStr.charAt(0).toUpperCase()+dateStr.slice(1))
+    ),
+    div({textAlign:'right'},
+      div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase'},'Progresso hoje'),
+      div({fontSize:24,fontWeight:900,color:pct===100?'#A5D6A7':'#FFD54F',lineHeight:1,marginTop:2},pct+'%'),
+      div({fontSize:11,color:'rgba(255,255,255,.5)'},done+' de '+totalCls+' checklists')
+    )
+  ));
+
+  // KPI cards
+  const kgrid=div({display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:12});
+  [
+    {icon:'✅',val:done+'/'+totalCls,label:'Checklists Feitos',sub:pct+'% concluído',color:'#0D7390',bg:'#E8F7FA'},
+    {icon:'⏳',val:String(inProg),label:'Em Andamento',sub:'agora mesmo',color:'#B76E00',bg:'#FFF8E1'},
+    {icon:'🔧',val:String(openIssues),label:'Problemas Abertos',sub:openIssues>0?'requerem atenção':'tudo ok!',color:openIssues>0?'#C62828':'#2E7D32',bg:openIssues>0?'#FFEBEE':'#E8F5E9'},
+    {icon:'📄',val:String(docsAlert.length),label:'Docs em Alerta',sub:docsAlert.length>0?'vencendo em breve':'todos em dia',color:docsAlert.length>0?'#B76E00':'#2E7D32',bg:docsAlert.length>0?'#FFF8E1':'#E8F5E9'},
   ].forEach(k=>{
-    kpis.appendChild(div({className:'kpi',style:{borderLeftColor:k.color}},
-      div({className:'kpi-val'},String(k.val)),
-      div({className:'kpi-label'},k.label)
+    kgrid.appendChild(div({background:k.bg,border:'1px solid #D0D0D0',padding:'12px 14px',borderLeft:'4px solid '+k.color},
+      div({display:'flex',alignItems:'center',gap:8,marginBottom:4},
+        h('span',{style:{fontSize:20}},k.icon),
+        h('span',{style:{fontSize:22,fontWeight:900,color:k.color,lineHeight:1}},k.val)
+      ),
+      div({fontSize:11,fontWeight:700,color:'#444',letterSpacing:'.05em',textTransform:'uppercase'},k.label),
+      div({fontSize:11,color:'#777',marginTop:2},k.sub)
     ));
   });
-  frag.appendChild(kpis);
+  frag.appendChild(kgrid);
 
-  // Documentos vencidos ou próximos do vencimento
-  const docsAlert=state.documents.filter(d=>{const s=docStatus(d);return s.days<d.remind_days_before;});
-  if(docsAlert.length>0){
-    frag.appendChild(sec('📄  Documentos em Alerta',docsAlert.length));
-    const dtbl=h('table',{className:'tbl'});
-    dtbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Documento'),h('th',{},'Unidade'),h('th',{},'Vencimento'),h('th',{},'Status'))));
-    const dtbody=h('tbody',{});
-    docsAlert.forEach(doc=>{
-      const st=docStatus(doc);
-      dtbody.appendChild(h('tr',{},
-        h('td',{style:{fontWeight:700}},doc.name),
-        h('td',{},doc.units?.name||'—'),
-        h('td',{},new Date(doc.expiry_date).toLocaleDateString('pt-BR')),
-        h('td',{},h('span',{className:'tag '+st.cls},st.label))
+  // Progresso por setor
+  const sectors=[...new Set(checklists.map(c=>c.sector||'Geral'))].sort();
+  if(sectors.length>0){
+    const secCard=div({background:'#fff',border:'1px solid #D0D0D0',padding:'14px',marginBottom:12});
+    secCard.appendChild(div({fontSize:11,fontWeight:700,color:'#777',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:12},'Progresso por Setor — Hoje'));
+    sectors.forEach(sector=>{
+      const sCls=checklists.filter(c=>(c.sector||'Geral')===sector&&c.active);
+      const sDone=today.filter(e=>e.status==='done'&&sCls.some(c=>c.id===e.checklist_id)).length;
+      const sPct=sCls.length>0?Math.round((sDone/sCls.length)*100):0;
+      const row=div({marginBottom:10});
+      row.appendChild(div({display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4},
+        h('span',{style:{fontSize:13,fontWeight:700,color:'#1A237E'}},'sector_'+sector),
+        h('span',{style:{fontSize:12,color:pctColor(sPct),fontWeight:700}},sDone+'/'+sCls.length+' ('+sPct+'%)')
       ));
+      row.querySelector('span').textContent=sector;
+      row.appendChild(div({height:8,background:'#EBEBEB',borderRadius:4,overflow:'hidden'},
+        div({height:'100%',width:sPct+'%',background:pctColor(sPct),borderRadius:4})
+      ));
+      secCard.appendChild(row);
     });
-    dtbl.appendChild(dtbody);frag.appendChild(dtbl);
-    frag.appendChild(div({height:'16px'}));
+    frag.appendChild(secCard);
   }
 
-  // Issues abertas
-  if(openIssues>0){
-    frag.appendChild(sec('⚠️  Problemas em Aberto',openIssues));
-    const issTable=h('table',{className:'tbl'});
-    issTable.appendChild(h('thead',{},h('tr',{},h('th',{},'Checklist'),h('th',{},'Reportado por'),h('th',{},'Descrição'),h('th',{},'Data'),h('th',{},'Ação'))));
-    const tbody=h('tbody',{});
+  // Alertas criticos
+  const hasAlerts=openIssues>0||docsAlert.length>0;
+  if(hasAlerts){
+    frag.appendChild(div({fontSize:11,fontWeight:700,color:'#C62828',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:8,display:'flex',alignItems:'center',gap:6},
+      h('span',{},'🚨  Alertas que precisam de atenção')
+    ));
     issues.filter(i=>i.status==='open').forEach(iss=>{
-      const tr=h('tr',{},
-        h('td',{style:{fontWeight:700,color:C.navy}},iss.checklists?.name||'—'),
-        h('td',{},iss.operators?.name||'—'),
-        h('td',{},iss.description||(iss.photo_url?'📷 Foto anexada':'—')),
-        h('td',{style:{color:C.t3,fontSize:12}},new Date(iss.created_at).toLocaleDateString('pt-BR')),
-        h('td',{},h('button',{className:'btn btn-success btn-sm',onClick:()=>resolveIssue(iss.id)},'✓ Resolver'))
-      );
-      tbody.appendChild(tr);
+      const card=div({background:'#fff',border:'1px solid #D0D0D0',borderLeft:'4px solid #C62828',padding:'12px 14px',marginBottom:6,display:'flex',alignItems:'flex-start',gap:10});
+      card.appendChild(div({width:34,height:34,borderRadius:'50%',background:'#FFEBEE',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0},'🔧'));
+      const info=div({flex:1});
+      info.appendChild(div({fontSize:11,fontWeight:700,color:'#C62828',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:2},'Problema Reportado'));
+      info.appendChild(div({fontSize:13,fontWeight:700,color:'#1A1A1A'},iss.checklists?.name||'—'));
+      info.appendChild(div({fontSize:12,color:'#555',marginTop:2},iss.description||'Sem descrição'));
+      info.appendChild(div({fontSize:11,color:'#888',marginTop:3},'Por '+(iss.operators?.name||'—')+' · '+new Date(iss.created_at).toLocaleDateString('pt-BR')));
+      card.appendChild(info);
+      card.appendChild(h('button',{className:'btn btn-success btn-sm',style:{flexShrink:0},onClick:()=>resolveIssue(iss.id)},'✓ Resolver'));
+      frag.appendChild(card);
     });
-    issTable.appendChild(tbody);
-    const issWrap=div({className:"tbl-scroll"});issWrap.appendChild(issTable);frag.appendChild(issWrap);
-    frag.appendChild(div({height:'16px'}));
+    docsAlert.forEach(doc=>{
+      const st=docStatus(doc);
+      const card=div({background:'#fff',border:'1px solid #D0D0D0',borderLeft:'4px solid '+(st.days<0?'#C62828':'#F9A825'),padding:'12px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10});
+      card.appendChild(div({width:34,height:34,borderRadius:'50%',background:st.days<0?'#FFEBEE':'#FFF8E1',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0},st.days<0?'❌':'⚠️'));
+      const info=div({flex:1});
+      info.appendChild(div({fontSize:11,fontWeight:700,color:st.days<0?'#C62828':'#B76E00',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:2},st.days<0?'Documento Vencido':'Vencendo em Breve'));
+      info.appendChild(div({fontSize:13,fontWeight:700,color:'#1A1A1A'},doc.name));
+      info.appendChild(div({fontSize:12,color:'#555',marginTop:2},(doc.units?.name||'Geral')+' · Vence: '+new Date(doc.expiry_date).toLocaleDateString('pt-BR')));
+      card.appendChild(info);
+      card.appendChild(h('span',{className:'tag '+(st.days<0?'tag-red':'tag-amber')},st.label));
+      frag.appendChild(card);
+    });
+    frag.appendChild(div({height:8}));
+  }
+
+  // Top operadores hoje
+  const opScores={};
+  today.filter(e=>e.status==='done').forEach(e=>{
+    if(!opScores[e.operator_id])opScores[e.operator_id]={name:e.operators?.name||'—',done:0};
+    opScores[e.operator_id].done++;
+  });
+  const topOps=Object.values(opScores).sort((a,b)=>b.done-a.done).slice(0,5);
+  if(topOps.length>0){
+    const topCard=div({background:'#fff',border:'1px solid #D0D0D0',padding:'14px',marginBottom:12});
+    topCard.appendChild(div({fontSize:11,fontWeight:700,color:'#777',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:12},'🏆 Top Operadores Hoje'));
+    const medals=['🥇','🥈','🥉','4º','5º'];
+    topOps.forEach((op,i)=>{
+      topCard.appendChild(div({display:'flex',alignItems:'center',gap:10,padding:'7px 0',borderBottom:i<topOps.length-1?'1px solid #F0F0F0':'none'},
+        h('span',{style:{fontSize:i<3?18:13,fontWeight:700,width:24,textAlign:'center',color:'#888'}},medals[i]),
+        div({flex:1,fontSize:13,fontWeight:700,color:'#1A1A1A'},op.name),
+        h('span',{style:{fontSize:12,fontWeight:700,color:C.navy}},op.done+' checklist'+(op.done!==1?'s':''))
+      ));
+    });
+    frag.appendChild(topCard);
   }
 
   // Atividade recente
-  frag.appendChild(sec('Atividade de Hoje'));
-  const actTable=h('table',{className:'tbl'});
-  actTable.appendChild(h('thead',{},h('tr',{},h('th',{},'Operador'),h('th',{},'Checklist'),h('th',{},'Setor'),h('th',{},'Status'),h('th',{},'Horário'))));
-  const tbody2=h('tbody',{});
+  frag.appendChild(div({fontSize:11,fontWeight:700,color:'#777',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:6},'Atividade Recente'));
+  const actList=div({background:'#fff',border:'1px solid #D0D0D0',marginBottom:12});
   if(today.length===0){
-    tbody2.appendChild(h('tr',{},h('td',{colSpan:5,style:{textAlign:'center',color:C.t3,padding:'24px'}},'Nenhuma atividade hoje ainda.')));
+    actList.appendChild(div({padding:'24px',textAlign:'center',color:'#999',fontSize:13},'Nenhuma atividade hoje ainda.'));
   }
-  today.slice(0,20).forEach(e=>{
-    const isDone=e.status==='done';
-    const tr=h('tr',{},
-      h('td',{style:{fontWeight:700}},e.operators?.name||'—'),
-      h('td',{},e.checklists?.name||'—'),
-      h('td',{},h('span',{className:'tag tag-gray'},e.checklists?.sector||'—')),
-      h('td',{},h('span',{className:`tag ${isDone?'tag-green':e.status==='in_progress'?'tag-amber':'tag-gray'}`},isDone?'CONCLUÍDO':e.status==='in_progress'?'EM ANDAMENTO':'ABANDONADO')),
-      h('td',{style:{color:C.t3,fontSize:12}},new Date(e.started_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}))
-    );
-    tbody2.appendChild(tr);
-  });
-  actTable.appendChild(tbody2);
-  const actWrap=div({className:"tbl-scroll"});actWrap.appendChild(actTable);frag.appendChild(actWrap);
-
-  return frag;
-}
-
-// ── TAB: UNITS ────────────────────────────────────────────────────────────
-function renderUnits(){
-  const {units,modal,modalData,saving,error,success}=state;
-  const frag=document.createDocumentFragment();
-  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
-  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
-
-  const active=units.filter(u=>u.active!==false);
-  const inactive=units.filter(u=>u.active===false);
-
-  frag.appendChild(sec('🏪  Unidades Ativas',active.length+' unidades','+ Nova Unidade',()=>ss({modal:'unit',modalData:{active:true}})));
-  const tbl=h('table',{className:'tbl'});
-  tbl.className='tbl tbl-card';tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'Operadores'),h('th',{},'Status'),h('th',{},'Ações'))));
-  const tbody=h('tbody',{});
-
-  [...active,...inactive].forEach(u=>{
-    const opCount=state.operators.filter(o=>o.unit_id===u.id).length;
-    const isActive=u.active!==false;
-    tbody.appendChild(h('tr',{},
-      h('td',{'data-label':'Unidade',style:{fontWeight:700,color:isActive?'#1A237E':'#999'}},u.name),
-      h('td',{'data-label':'Operadores',style:{color:'#555'}},opCount+' operador'+(opCount!==1?'es':'')),
-      h('td',{'data-label':'Status'},h('span',{className:`tag ${isActive?'tag-green':'tag-red'}`},isActive?'ATIVA':'INATIVA')),
-      h('td',{},
-        h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'unit',modalData:{...u}})},'Editar'),
-        h('button',{className:`btn btn-sm ${isActive?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
-          await sb.from('units').update({active:!isActive}).eq('id',u.id);
-          await reload();
-        }},isActive?'Desativar':'Ativar'),
-        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
-          if(opCount>0){alert('Não é possível excluir uma unidade com operadores cadastrados. Transfira ou remova os operadores primeiro.');return;}
-          if(confirm('Excluir a unidade "'+u.name+'"? Esta ação não pode ser desfeita.')){
-            await sb.from('units').delete().eq('id',u.id);
-            await reload();
-            ss({success:'Unidade excluída!'});setTimeout(()=>ss({success:null}),3000);
-          }
-        }},'Excluir')
-      )
+  today.slice(0,15).forEach((e,i)=>{
+    const isDone=e.status==='done',isInProg=e.status==='in_progress';
+    const icon=isDone?'✅':isInProg?'⏳':'❌';
+    actList.appendChild(div({display:'flex',alignItems:'center',gap:10,padding:'9px 14px',borderBottom:i<Math.min(today.length,15)-1?'1px solid #F0F0F0':'none'},
+      h('span',{style:{fontSize:15,flexShrink:0}},icon),
+      div({flex:1},
+        h('span',{style:{fontSize:13,fontWeight:700,color:'#1A1A1A'}},(e.operators?.name||'—').split(' ')[0]+' '),
+        h('span',{style:{fontSize:13,color:'#555'}},isDone?'concluiu ':isInProg?'iniciou ':'abandonou '),
+        h('span',{style:{fontSize:13,fontWeight:700,color:C.navy}},e.checklists?.name||'—')
+      ),
+      h('span',{style:{fontSize:11,color:'#999',flexShrink:0}},new Date(e.started_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}))
     ));
   });
-
-  if([...active,...inactive].length===0){
-    tbody.appendChild(h('tr',{},h('td',{colSpan:4,style:{textAlign:'center',color:'#999',padding:'24px'}},'Nenhuma unidade cadastrada.')));
-  }
-
-  tbl.appendChild(tbody);frag.appendChild(tbl);
-
-  // Modal unidade
-  if(modal==='unit'){
-    const md=modalData;const isEdit=!!md.id;
-    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'400px'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Unidade':'Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
-    const g=div({className:'form-group'});
-    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade'));
-    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
-    inp.addEventListener('input',e=>{md.name=e.target.value;});
-    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
-      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
-      h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
-        if(!md.name.trim()){ss({error:'Nome é obrigatório.'});return;}
-        ss({saving:true});
-        if(isEdit){await sb.from('units').update({name:md.name}).eq('id',md.id);}
-        else{await sb.from('units').insert({name:md.name,active:true});}
-        await reload();
-        ss({saving:false,modal:null,modalData:{},success:isEdit?'Unidade atualizada!':'Unidade criada!'});
-        setTimeout(()=>ss({success:null}),3000);
-      }},saving?'Salvando...':'Salvar')
-    ));
-    overlay.appendChild(m);frag.appendChild(overlay);
-  }
-
+  frag.appendChild(actList);
   return frag;
 }
-
 // ── TAB: OPERATORS ────────────────────────────────────────────────────────
 function renderOperators(){
   const {operators,units,modal,modalData,saving,error,success}=state;
