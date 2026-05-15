@@ -231,11 +231,32 @@ async function abandonList(){
   ss({screen:'home',activeList:null,executionId:null,stepIdx:0,sVals:{},sPhotos:{},sChecks:{}});
 }
 
+function isProblemStep(step){
+  return step.step_items.some(i=>i.label.includes('Detectou algo quebrado'));
+}
+function problemChecked(step){
+  const checkItem=step.step_items.find(i=>i.label.includes('Detectou'));
+  return checkItem?state.sChecks[checkItem.id]:undefined;
+}
 function canNext(){
   const step=state.activeList.checklist_steps[state.stepIdx];
+  const isProb=isProblemStep(step);
+  const probAnswer=isProb?problemChecked(step):undefined;
+
   return step.step_items.every(item=>{
+    if(isProb){
+      // Etapa de problema: lógica condicional
+      if(item.label.includes('Detectou'))return probAnswer!==undefined; // precisa responder
+      if(item.label.includes('descreva')){
+        if(probAnswer===true)return(state.sVals[item.id]||'').trim().length>0; // obrigatório se sim
+        return true; // não precisa se não
+      }
+      if(item.label.includes('opcional'))return true; // foto sempre opcional
+      return true;
+    }
+    // Itens normais
     if(item.type==='check')return state.sChecks[item.id]!==undefined;
-    if(item.type==='photo'){const isOpt=item.label.toLowerCase().includes('opcional');return!!state.sPhotos[item.id]||(isOpt);}
+    if(item.type==='photo'){const isOpt=item.label.toLowerCase().includes('opcional');return!!state.sPhotos[item.id]||isOpt;}
     if(item.type==='number')return(state.sVals[item.id]||'').trim().length>0;
     return true;
   });
@@ -645,11 +666,20 @@ function renderExec(){
   scr.appendChild(sub);
   scr.appendChild(h('div',{className:'prog-track'},h('div',{className:'prog-fill',style:{width:prog+'%'}})));
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
+  const isProbStep=isProblemStep(step);
+  const probAns=isProbStep?problemChecked(step):undefined;
+
   step.step_items.forEach((item,i)=>{
-    const tL={check:'CONFIRMAÇÃO',photo:'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:'OBSERVAÇÃO'}[item.type];
-    const tI={check:'✓',photo:'📷',number:'🌡',text:'📝'}[item.type];
-    body.appendChild(h('div',{className:'sec'},h('span',{},tI+'  '+tL)));
-    const box=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'14px'});
+    // Na etapa de problema: oculta texto e foto até responder "Feito"
+    const isProbText=isProbStep&&item.label.includes('descreva');
+    const isProbPhoto=isProbStep&&item.label.includes('opcional');
+    if((isProbText||isProbPhoto)&&probAns!==true)return; // esconde se não marcou "Feito"
+
+    const isOptPhoto=item.label.toLowerCase().includes('opcional');
+    const tL={check:isProbStep&&item.label.includes('Detectou')?'PROBLEMA ENCONTRADO?':item.type==='check'?'CONFIRMAÇÃO':'CONFIRMAÇÃO',photo:isOptPhoto?'FOTO (OPCIONAL)':'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:isProbText?'DESCREVA O PROBLEMA':'OBSERVAÇÃO'}[item.type]||'ITEM';
+    const tI={check:'🔧',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
+    body.appendChild(h('div',{className:'sec',style:{background:isProbStep?'#7B1010':C.navy}},h('span',{},tI+'  '+tL)));
+    const box=div({background:isProbStep?'#FFF8F8':C.white,border:`1px solid ${isProbStep?'#FFCDD2':C.bd}`,borderTop:'none',padding:'14px'});
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
       const ck=sChecks[item.id];

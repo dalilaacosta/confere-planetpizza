@@ -280,12 +280,26 @@ async function toggleOperator(id,active){
 async function saveChecklist(data,id){
   ss({saving:true});
   try{
-    if(id){await sb.from('checklists').update(data).eq('id',id);}
-    else{await sb.from('checklists').insert(data);}
+    if(id){
+      await sb.from('checklists').update(data).eq('id',id);
+    }else{
+      // Cria checklist
+      const {data:newCl,error}=await sb.from('checklists').insert(data).select().single();
+      if(error)throw error;
+      // Adiciona automaticamente etapa de problema no final (position 999 = sempre última)
+      const {data:step}=await sb.from('checklist_steps')
+        .insert({checklist_id:newCl.id,position:999})
+        .select().single();
+      await sb.from('step_items').insert([
+        {step_id:step.id,type:'check',label:'Detectou algo quebrado ou com problema de funcionamento?',position:1},
+        {step_id:step.id,type:'text',label:'Se sim, descreva o problema encontrado:',position:2},
+        {step_id:step.id,type:'photo',label:'Foto do problema (opcional)',position:3},
+      ]);
+    }
     await reload();
-    ss({saving:false,modal:null,success:id?'Checklist atualizado!':'Checklist criado!',modalData:{}});
+    ss({saving:false,modal:null,success:id?'Checklist atualizado!':'Checklist criado! Etapa de problema adicionada automaticamente.',modalData:{}});
     setTimeout(()=>ss({success:null}),3000);
-  }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
+  }catch(e){ss({saving:false,error:'Erro ao salvar: '+(e.message||'')});}
 }
 
 async function toggleChecklist(id,active){
