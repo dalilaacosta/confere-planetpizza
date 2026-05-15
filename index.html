@@ -88,7 +88,7 @@ async function init(){
     const {data:ops,error:e1}=await sb.from('operators').select('*').eq('active',true).order('name');
     if(e1)throw e1;
     const {data:cls,error:e2}=await sb.from('checklists')
-      .select('*, checklist_steps(id,position, step_items(id,type,label,position))')
+      .select('*, checklist_steps(id,position, step_items(id,type,label,position))').order('sector')
       .eq('active',true).order('id');
     if(e2)throw e2;
     cls.forEach(cl=>{
@@ -154,7 +154,7 @@ async function abandonList(){
 function canNext(){
   const step=state.activeList.checklist_steps[state.stepIdx];
   return step.step_items.every(item=>{
-    if(item.type==='check')return!!state.sChecks[item.id];
+    if(item.type==='check')return state.sChecks[item.id]!==undefined;
     if(item.type==='photo')return!!state.sPhotos[item.id];
     if(item.type==='number')return(state.sVals[item.id]||'').trim().length>0;
     return true;
@@ -415,13 +415,18 @@ function renderHome(){
   }
 
   body.appendChild(div({height:8}));
-  body.appendChild(sec('Checklists do Dia',checklists.length));
 
   if(checklists.length===0){
+    body.appendChild(sec('Checklists do Dia',0));
     body.appendChild(div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'32px 20px',textAlign:'center'},div({fontSize:13,color:C.t3},'Nenhum checklist cadastrado ainda.')));
   }
 
-  checklists.forEach(cl=>{
+  // Agrupar por setor
+  const sectors=[...new Set(checklists.map(cl=>cl.sector||'Geral'))].sort();
+  sectors.forEach(sector=>{
+    const sectorCls=checklists.filter(cl=>(cl.sector||'Geral')===sector);
+    body.appendChild(sec(sector.toUpperCase(),sectorCls.length));
+    sectorCls.forEach(cl=>{
     const done=completedByMap[cl.id];
     const progress=inProgressMap[cl.id];
     const isMyOwn=progress?.empId===employee.id;
@@ -448,7 +453,8 @@ function renderHome(){
     row.appendChild(info);
     if(!isSomeoneElse)row.appendChild(h('span',{style:{fontSize:18,color:done?'#A5D6A7':C.t4,flexShrink:0}},done?'↺':'›'));
     body.appendChild(row);
-  });
+    }); // end sectorCls.forEach
+  }); // end sectors.forEach
 
   if(allDone){
     body.appendChild(div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'32px 20px',textAlign:'center'},
@@ -508,15 +514,29 @@ function renderExec(){
     const box=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'14px'});
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
-      const ck=!!sChecks[item.id];
-      box.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:!ck}}),
-        style:{background:ck?'#E3F2FD':C.bg,border:`2px solid ${ck?C.blue:C.bd}`,padding:'14px 20px',
-          display:'flex',alignItems:'center',gap:12,cursor:'pointer',transition:'all .15s',width:'100%'}},
-        div({width:26,height:26,background:ck?C.blue:C.white,border:`2px solid ${ck?C.blue:C.bd}`,
-          display:'flex',alignItems:'center',justifyContent:'center',transition:'all .15s',flexShrink:0},
-          ck?h('span',{style:{color:'#fff',fontSize:16,fontWeight:900}},'✓'):null),
-        h('span',{style:{fontSize:13,fontWeight:700,color:ck?C.blue:C.t3,letterSpacing:'.03em'}},ck?'CONFIRMADO':'TOQUE PARA CONFIRMAR')
-      ));
+      const ck=sChecks[item.id]; // true=feito, false=nao feito, undefined=sem resposta
+      const btnRow=div({display:'flex',gap:10});
+      // Botão FEITO
+      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:true}}),
+        style:{
+          flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,
+          background:ck===true?'#2E7D32':'#fff',
+          color:ck===true?'#fff':'#2E7D32',
+          border:`2px solid #2E7D32`,
+          borderRadius:8,cursor:'pointer',transition:'all .2s',
+          fontFamily:"'Roboto',sans-serif",letterSpacing:'.02em'
+        }},'✓  Feito'));
+      // Botão NÃO FEITO
+      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:false}}),
+        style:{
+          flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,
+          background:ck===false?C.red:'#fff',
+          color:ck===false?'#fff':C.red,
+          border:`2px solid ${C.red}`,
+          borderRadius:8,cursor:'pointer',transition:'all .2s',
+          fontFamily:"'Roboto',sans-serif",letterSpacing:'.02em'
+        }},'✕  Não Feito'));
+      box.appendChild(btnRow);
     }
     if(item.type==='photo'){
       const ph=sPhotos[item.id],ph2=multi?140:180;
