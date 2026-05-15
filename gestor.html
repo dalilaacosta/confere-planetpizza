@@ -108,10 +108,76 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-si
 .pin-boxes{display:flex;justify-content:center;gap:12px;margin:20px 0}
 .pin-box{width:56px;height:68px;border:2px solid #D0D0D0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;border-radius:4px;transition:all .15s}
 
-@media(max-width:600px){
+/* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .content{padding:10px}
-  .tbl td,.tbl th{padding:8px 10px}
+  .form-row{grid-template-columns:1fr}
+}
+
+/* Mobile */
+@media(max-width:600px){
+  /* Layout */
+  body{font-size:13px}
+  .content{padding:8px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .kpi{padding:10px 12px}
+  .kpi-val{font-size:22px}
+  .kpi-label{font-size:10px}
+  .form-row{grid-template-columns:1fr}
+
+  /* Top bar */
+  .top-bar{height:44px;padding:0 12px}
+  .top-bar-logo{font-size:14px}
+  .top-bar-sub{display:none}
+  .top-bar-user{gap:6px}
+  .top-bar-name{font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .top-bar-logout{font-size:10px;padding:4px 8px}
+
+  /* Nav tabs - scroll horizontal */
+  .nav{flex-wrap:nowrap}
+  .nav-tab{padding:9px 11px;font-size:10px;letter-spacing:.03em;white-space:nowrap}
+
+  /* Section header */
+  .sec{padding:6px 10px;flex-wrap:wrap;gap:4px}
+  .sec-btn{font-size:10px;padding:3px 8px}
+
+  /* Tables - horizontal scroll */
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl{min-width:500px}
+  .tbl th{padding:7px 10px;font-size:10px}
+  .tbl td{padding:8px 10px;font-size:12px}
+
+  /* Cards view for tables on mobile */
+  .tbl-card thead{display:none}
+  .tbl-card{min-width:unset;border:none;background:transparent}
+  .tbl-card tr{display:block;background:#fff;border:1px solid #D0D0D0;margin-bottom:8px;padding:0}
+  .tbl-card td{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F0F0F0;padding:9px 12px;min-width:unset}
+  .tbl-card td:last-child{border-bottom:none;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+  .tbl-card td::before{content:attr(data-label);font-size:10px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;margin-right:8px}
+  .tbl-card td:last-child::before{display:none}
+
+  /* Buttons */
+  .btn-sm{padding:5px 9px;font-size:10px}
+  .btn-primary,.btn-success,.btn-danger,.btn-gray{padding:10px 14px;font-size:12px}
+
+  /* Modal - bottom sheet on mobile */
+  .overlay{align-items:flex-end;padding:0}
+  .modal{max-width:100%;max-height:92vh;overflow-y:auto;border-radius:0}
+  .modal-hdr{padding:12px 14px;position:sticky;top:0}
+  .modal-body{padding:14px}
+  .modal-footer{padding:12px 14px;position:sticky;bottom:0;background:#fff}
+
+  /* Login card */
+  .login-card{padding:20px;border:none}
+  .pin-box{width:48px;height:60px;font-size:28px}
+}
+
+/* Very small */
+@media(max-width:360px){
+  .nav-tab{padding:8px 8px;font-size:9px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -411,7 +477,7 @@ function renderOverview(){
       tbody.appendChild(tr);
     });
     issTable.appendChild(tbody);
-    frag.appendChild(issTable);
+    const issWrap=div({className:"tbl-scroll"});issWrap.appendChild(issTable);frag.appendChild(issWrap);
     frag.appendChild(div({height:'16px'}));
   }
 
@@ -435,7 +501,7 @@ function renderOverview(){
     tbody2.appendChild(tr);
   });
   actTable.appendChild(tbody2);
-  frag.appendChild(actTable);
+  const actWrap=div({className:"tbl-scroll"});actWrap.appendChild(actTable);frag.appendChild(actWrap);
 
   return frag;
 }
@@ -452,16 +518,16 @@ function renderUnits(){
 
   frag.appendChild(sec('🏪  Unidades Ativas',active.length+' unidades','+ Nova Unidade',()=>ss({modal:'unit',modalData:{active:true}})));
   const tbl=h('table',{className:'tbl'});
-  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'Operadores'),h('th',{},'Status'),h('th',{},'Ações'))));
+  tbl.className='tbl tbl-card';tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'Operadores'),h('th',{},'Status'),h('th',{},'Ações'))));
   const tbody=h('tbody',{});
 
   [...active,...inactive].forEach(u=>{
     const opCount=state.operators.filter(o=>o.unit_id===u.id).length;
     const isActive=u.active!==false;
     tbody.appendChild(h('tr',{},
-      h('td',{style:{fontWeight:700,color:isActive?'#1A237E':'#999'}},u.name),
-      h('td',{style:{color:'#555'}},opCount+' operador'+(opCount!==1?'es':'')),
-      h('td',{},h('span',{className:`tag ${isActive?'tag-green':'tag-red'}`},isActive?'ATIVA':'INATIVA')),
+      h('td',{'data-label':'Unidade',style:{fontWeight:700,color:isActive?'#1A237E':'#999'}},u.name),
+      h('td',{'data-label':'Operadores',style:{color:'#555'}},opCount+' operador'+(opCount!==1?'es':'')),
+      h('td',{'data-label':'Status'},h('span',{className:`tag ${isActive?'tag-green':'tag-red'}`},isActive?'ATIVA':'INATIVA')),
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'unit',modalData:{...u}})},'Editar'),
         h('button',{className:`btn btn-sm ${isActive?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
@@ -526,20 +592,20 @@ function renderOperators(){
   frag.appendChild(sec('Operadores Cadastrados',operators.length+' total','+ Novo Operador',()=>ss({modal:'operator',modalData:{access_level:'operator',active:true}})));
 
   const tbl=h('table',{className:'tbl'});
-  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome'),h('th',{},'Setor'),h('th',{},'Unidade'),h('th',{},'Nível'),h('th',{},'PIN'),h('th',{},'Status'),h('th',{},'Ações'))));
+  tbl.className='tbl tbl-card';tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome'),h('th',{},'Setor'),h('th',{},'Unidade'),h('th',{},'Nível'),h('th',{},'PIN'),h('th',{},'Status'),h('th',{},'Ações'))));
   const tbody=h('tbody',{});
   operators.forEach(op=>{
     const unit=units.find(u=>u.id===op.unit_id);
     const tr=h('tr',{},
-      h('td',{},div({display:'flex',alignItems:'center',gap:10},
+      h('td',{'data-label':'Nome'},div({display:'flex',alignItems:'center',gap:10},
         div({width:32,height:32,borderRadius:'50%',background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0},op.initials),
         h('span',{style:{fontWeight:700}},op.name)
       )),
-      h('td',{},op.role||'—'),
-      h('td',{},unit?.name||'—'),
-      h('td',{},h('span',{className:`tag ${op.access_level==='manager'?'tag-blue':op.access_level==='leader'?'tag-amber':'tag-gray'}`},op.access_level==='manager'?'GESTOR':op.access_level==='leader'?'LÍDER':'OPERADOR')),
-      h('td',{style:{fontFamily:'monospace',letterSpacing:'.1em'}},op.pin),
-      h('td',{},h('span',{className:`tag ${op.active?'tag-green':'tag-red'}`},op.active?'ATIVO':'INATIVO')),
+      h('td',{'data-label':'Setor'},op.role||'—'),
+      h('td',{'data-label':'Unidade'},unit?.name||'—'),
+      h('td',{'data-label':'Nível'},h('span',{className:`tag ${op.access_level==='manager'?'tag-blue':op.access_level==='leader'?'tag-amber':'tag-gray'}`},op.access_level==='manager'?'GESTOR':op.access_level==='leader'?'LÍDER':'OPERADOR')),
+      h('td',{'data-label':'PIN',style:{fontFamily:'monospace',letterSpacing:'.1em'}},op.pin),
+      h('td',{'data-label':'Status'},h('span',{className:`tag ${op.active?'tag-green':'tag-red'}`},op.active?'ATIVO':'INATIVO')),
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'operator',modalData:{...op}})},'Editar'),
         h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar'),
