@@ -211,6 +211,7 @@ let state={
   screen:'loading',
   manager:SESSION,selMgr:null,pin:'',pinErr:false,
   operators:[],checklists:[],units:[],executions:[],issues:[],documents:[],
+  selectedUnit:null,
   tab:'overview',
   modal:null,modalData:{},
   saving:false,error:null,success:null,
@@ -236,13 +237,20 @@ async function init(){
     const execs=await loadExecs();
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
-    ss({screen:'dashboard',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[]});
+    ss({screen:'unit_select',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[]});
   }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
 }
 
 async function loadExecs(){
   const d=new Date();d.setHours(0,0,0,0);
-  const {data}=await sb.from('executions').select('*, operators(id,name), checklists(name,sector)').eq('company_id',COMPANY_ID).gte('started_at',d.toISOString()).order('started_at',{ascending:false});
+  let q=sb.from('executions').select('*, operators(id,name), checklists(name,sector)').eq('company_id',COMPANY_ID).gte('started_at',d.toISOString()).order('started_at',{ascending:false});
+  // Filter by selected unit's operators
+  if(state.selectedUnit){
+    const unitOpIds=state.operators.filter(o=>o.unit_id===state.selectedUnit.id).map(o=>o.id);
+    if(unitOpIds.length>0)q=q.in('operator_id',unitOpIds);
+    else return [];
+  }
+  const {data}=await q;
   return data||[];
 }
 
@@ -1196,6 +1204,95 @@ function renderSettings(){
   return frag;
 }
 
+// ── UNIT SELECT ───────────────────────────────────────────────────────────
+function renderUnitSelect(){
+  const {units,saving,modal,modalData}=state;
+  const root=h('div',{style:{display:'flex',flexDirection:'column',minHeight:'100vh',background:'#F0F3F9'}});
+
+  // Top bar
+  const tb=h('div',{className:'top-bar'});
+  tb.appendChild(h('span',{className:'top-bar-logo'},'☑ Confere'));
+  tb.appendChild(h('span',{className:'top-bar-sub'},'· Selecionar Unidade'));
+  const userDiv=div({className:'top-bar-user'});
+  userDiv.appendChild(h('span',{className:'top-bar-name'},state.manager?.name));
+  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:logout},'Sair'));
+  tb.appendChild(userDiv);
+  root.appendChild(tb);
+
+  // Content
+  const wrap=div({display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'32px 16px',flex:1});
+  const card=div({background:'#fff',border:'1px solid #D0D0D0',width:'100%',maxWidth:'540px',padding:'0'});
+
+  // Header do card
+  card.appendChild(div({background:'#1A237E',padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'},
+    div({},
+      div({fontSize:15,fontWeight:700,color:'#fff',letterSpacing:'.02em'},'Em qual unidade você está?'),
+      div({fontSize:12,color:'rgba(255,255,255,.6)',marginTop:3},'Selecione para ver o dashboard daquela unidade')
+    ),
+    h('button',{className:'btn',style:{background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.3)',color:'#fff',fontSize:11,fontWeight:700,padding:'6px 12px',cursor:'pointer',fontFamily:"'Roboto',sans-serif",letterSpacing:'.05em'},onClick:()=>ss({modal:'unit',modalData:{active:true}})},'+ Nova Unidade')
+  ));
+
+  // Lista de unidades
+  const activeUnits=units.filter(u=>u.active!==false);
+  if(activeUnits.length===0){
+    card.appendChild(div({padding:'32px',textAlign:'center'},
+      div({fontSize:32,marginBottom:12},'🏪'),
+      div({fontSize:14,fontWeight:700,color:'#555',marginBottom:6},'Nenhuma unidade cadastrada'),
+      div({fontSize:12,color:'#999',marginBottom:16},'Cadastre sua primeira unidade para continuar'),
+      h('button',{className:'btn btn-primary',style:{padding:'10px 20px'},onClick:()=>ss({modal:'unit',modalData:{active:true}})},'+ Cadastrar Unidade')
+    ));
+  }
+
+  activeUnits.forEach(unit=>{
+    const opCount=state.operators.filter(o=>o.unit_id===unit.id&&o.active).length;
+    const row=h('button',{className:'btn',
+      onClick:()=>ss({selectedUnit:unit,screen:'dashboard',tab:'overview',modal:null}),
+      style:{background:'#fff',border:'none',borderBottom:'1px solid #EBEBEB',padding:'16px 20px',
+        display:'flex',alignItems:'center',gap:14,width:'100%',cursor:'pointer',textAlign:'left',transition:'background .15s'}});
+    row.addEventListener('mouseover',()=>row.style.background='#F5F7FF');
+    row.addEventListener('mouseout',()=>row.style.background='#fff');
+    row.appendChild(div({width:44,height:44,borderRadius:'50%',background:'#E8EAF6',
+      display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0},'🏪'));
+    row.appendChild(div({flex:1},
+      div({fontSize:15,fontWeight:700,color:'#1A237E'},unit.name),
+      div({fontSize:12,color:'#777',marginTop:3},opCount+' operador'+(opCount!==1?'es ativos':'ativo'))
+    ));
+    row.appendChild(h('span',{style:{fontSize:22,color:'#AEAEB2'}},'›'));
+    card.appendChild(row);
+  });
+
+  wrap.appendChild(card);
+  root.appendChild(wrap);
+
+  // Modal nova unidade (reutilizado)
+  if(modal==='unit'){
+    const md=modalData;
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+    const g=div({className:'form-group'});
+    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade *'));
+    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';
+    inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
+    inp.addEventListener('input',e=>{md.name=e.target.value;});
+    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',style:{padding:'10px 20px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',style:{padding:'10px 24px'},disabled:saving,onClick:async()=>{
+        if(!(md.name||'').trim()){ss({error:'Nome obrigatório.'});return;}
+        ss({saving:true});
+        await sb.from('units').insert({name:md.name,active:true,company_id:COMPANY_ID});
+        await reload();
+        ss({saving:false,modal:null,modalData:{},screen:'unit_select'});
+      }},saving?'Salvando...':'💾  Salvar')
+    ));
+    overlay.appendChild(m);root.appendChild(overlay);
+  }
+
+  return root;
+}
+
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
 function renderDashboard(){
   const {manager,tab}=state;
@@ -1204,8 +1301,12 @@ function renderDashboard(){
   // Top bar
   const tb=h('div',{className:'top-bar'});
   tb.appendChild(h('span',{className:'top-bar-logo'},'☑ Confere'));
-  tb.appendChild(h('span',{className:'top-bar-sub'},'· Painel do Gestor'));
+  const unitLabel=state.selectedUnit?.name||'';
+  tb.appendChild(h('span',{className:'top-bar-sub'},'· '+unitLabel));
   const userDiv=div({className:'top-bar-user'});
+  userDiv.appendChild(h('button',{className:'top-bar-logout',
+    style:{background:'rgba(255,255,255,.15)',marginRight:6},
+    onClick:()=>ss({screen:'unit_select',selectedUnit:null,tab:'overview'})},'🔄 Trocar unidade'));
   userDiv.appendChild(h('span',{className:'top-bar-name'},manager.name));
   userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:()=>logout()},'Sair'));
   tb.appendChild(userDiv);
@@ -1236,7 +1337,8 @@ function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
   if(!SESSION){window.location.href='login.html';return;}
-  if(state.screen==='loading'){
+  if(state.screen==='unit_select'){c=renderUnitSelect();}
+  else if(state.screen==='loading'){
     c=div({display:'flex',flexDirection:'column',minHeight:'100vh'},
       h('div',{className:'top-bar'},h('span',{style:{color:'#fff',fontWeight:900,fontSize:16}},'☑ Confere')),
       div({flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16},
