@@ -1339,9 +1339,11 @@ function render(){
     }
   }catch(err){
     console.error('Render error:',err);
-    c=div({display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:12},
+    const errMsg=err?.message||String(err)||'Erro desconhecido';
+    c=div({display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:12,padding:'20px'},
       div({fontSize:32},'⚠️'),
-      div({fontSize:14,fontWeight:700,color:'#C62828'},'Erro ao carregar. Recarregue a página.'),
+      div({fontSize:14,fontWeight:700,color:'#C62828',marginBottom:4},'Erro ao carregar. Recarregue a página.'),
+      div({fontSize:12,color:'#888',fontFamily:'monospace',background:'#F5F5F5',padding:'8px 12px',maxWidth:'500px',wordBreak:'break-all'},errMsg),
       h('button',{onclick:'location.reload()',style:{marginTop:8,padding:'8px 20px',background:'#1A237E',color:'#fff',border:'none',cursor:'pointer',fontFamily:"'Roboto',sans-serif",fontWeight:700}},'Recarregar')
     );
   }
