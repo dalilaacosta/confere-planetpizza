@@ -220,6 +220,12 @@ let state={
 function ss(p){state={...state,...p};render();}
 
 // ── DATA ──────────────────────────────────────────────────────────────────
+async function hashPassword(password){
+  const msgBuffer=new TextEncoder().encode(password);
+  const hashBuffer=await crypto.subtle.digest('SHA-256',msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 async function init(){
   if(!SESSION){window.location.href='login.html';return;}
   try{
@@ -237,7 +243,8 @@ async function init(){
     const execs=await loadExecs();
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
-    ss({screen:'unit_select',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[]});
+    const {data:companyData}=await sb.from('companies').select('*').eq('id',COMPANY_ID).single();
+    ss({screen:'unit_select',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
   }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
 }
 
@@ -1192,147 +1199,125 @@ function renderDocuments(){
 
 // ── TAB: SETTINGS ─────────────────────────────────────────────────────────
 function renderSettings(){
-  const {units,modal,modalData,saving}=state;
+  const {saving,error,success}=state;
   const frag=document.createDocumentFragment();
-  
-  frag.appendChild(div({background:'#fff',border:'1px solid #D0D0D0',padding:'20px',textAlign:'center',color:'#777'},
-    div({fontSize:32,marginBottom:8},'⚙️'),
-    div({fontSize:14,fontWeight:700,color:'#1A237E',marginBottom:6},'Configurações do Sistema'),
-    div({fontSize:13,color:'#777',marginBottom:16},'As unidades agora têm sua própria aba no menu principal.'),
-    h('button',{className:'btn btn-primary',onClick:()=>ss({tab:'units'})},'🏪  Ir para Unidades')
+  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
+  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
+
+  // Load company data
+  let company=state.companyData||{};
+
+  // ── Dados da Empresa ───────────────────────────────────────────────────
+  frag.appendChild(sec('🏢  Dados Cadastrais da Empresa'));
+  const formCard=div({background:'#fff',border:'1px solid #D0D0D0',borderTop:'none',padding:'20px'});
+
+  function row2(...fields){const r=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'0'});fields.forEach(f=>r.appendChild(f));return r;}
+  function row3(...fields){const r=div({display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'14px',marginBottom:'0'});fields.forEach(f=>r.appendChild(f));return r;}
+  function field(label,key,type='text',ph=''){
+    const g=div({marginBottom:'14px'});
+    g.appendChild(h('label',{className:'form-label'},label));
+    const el=document.createElement('input');el.type=type;el.className='form-inp';
+    el.value=company[key]||'';el.placeholder=ph;
+    el.addEventListener('input',e=>{company[key]=e.target.value;state.companyData=company;});
+    g.appendChild(el);return g;
+  }
+
+  formCard.appendChild(row2(
+    field('Razão Social','razao_social','text','Nome jurídico da empresa'),
+    field('Nome Fantasia','nome_fantasia','text','Como é conhecida')
   ));
+  formCard.appendChild(row3(
+    field('CNPJ','cnpj','text','00.000.000/0000-00'),
+    field('Inscrição Estadual','inscricao_estadual','text','IE'),
+    field('Inscrição Municipal','inscricao_municipal','text','IM')
+  ));
+  formCard.appendChild(field('Endereço Completo','endereco','text','Rua, número, bairro, cidade, estado, CEP'));
+  formCard.appendChild(row2(
+    field('Telefone','telefone','tel','(00) 0000-0000'),
+    field('Celular','celular','tel','(00) 00000-0000')
+  ));
+
+  formCard.appendChild(h('div',{style:{height:'1px',background:'#EBEBEB',margin:'8px 0 20px'}}));
+  formCard.appendChild(div({fontSize:11,fontWeight:700,color:'#1A237E',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:14},'👤  Responsável'));
+  formCard.appendChild(row2(
+    field('Nome do Responsável','responsavel','text','Nome completo'),
+    field('E-mail','email','email','email@empresa.com')
+  ));
+
+  formCard.appendChild(div({textAlign:'right'},
+    h('button',{className:'btn btn-primary',style:{padding:'10px 28px'},disabled:saving,onClick:async()=>{
+      ss({saving:true,error:null});
+      try{
+        await sb.from('companies').update({
+          razao_social:company.razao_social||null,
+          nome_fantasia:company.nome_fantasia||null,
+          cnpj:company.cnpj||null,
+          inscricao_estadual:company.inscricao_estadual||null,
+          inscricao_municipal:company.inscricao_municipal||null,
+          endereco:company.endereco||null,
+          telefone:company.telefone||null,
+          celular:company.celular||null,
+          responsavel:company.responsavel||null,
+          email:company.email||null,
+        }).eq('id',COMPANY_ID);
+        ss({saving:false,success:'Dados salvos com sucesso!'});
+        setTimeout(()=>ss({success:null}),3000);
+      }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
+    }},saving?'Salvando...':'💾  Salvar Dados')
+  ));
+  frag.appendChild(formCard);
+
+  frag.appendChild(div({height:'20px'}));
+
+  // ── Alterar Senha ──────────────────────────────────────────────────────
+  frag.appendChild(sec('🔒  Alterar Senha de Acesso'));
+  const passCard=div({background:'#fff',border:'1px solid #D0D0D0',borderTop:'none',padding:'20px'});
+  let passData={current:'',novo:'',confirma:''};
+
+  function passField(label,key,ph){
+    const g=div({marginBottom:'14px'});
+    g.appendChild(h('label',{className:'form-label'},label));
+    const el=document.createElement('input');el.type='password';el.className='form-inp';el.placeholder=ph;
+    el.addEventListener('input',e=>{passData[key]=e.target.value;});
+    g.appendChild(el);return g;
+  }
+
+  passCard.appendChild(div({fontSize:12,color:'#777',marginBottom:16,lineHeight:1.6},'Para alterar sua senha, confirme a senha atual e depois defina a nova senha.'));
+  passCard.appendChild(row3(
+    passField('Senha Atual','current','Digite a senha atual'),
+    passField('Nova Senha','novo','Mínimo 6 caracteres'),
+    passField('Confirmar Nova Senha','confirma','Repita a nova senha')
+  ));
+  const passErr=div({fontSize:12,color:'#C62828',fontWeight:700,marginBottom:10,display:'none'});
+  passCard.appendChild(passErr);
+
+  passCard.appendChild(div({textAlign:'right'},
+    h('button',{className:'btn btn-primary',style:{padding:'10px 28px'},onClick:async()=>{
+      passErr.style.display='none';
+      if(!passData.current){passErr.textContent='Digite a senha atual.';passErr.style.display='block';return;}
+      if(passData.novo.length<6){passErr.textContent='Nova senha deve ter pelo menos 6 caracteres.';passErr.style.display='block';return;}
+      if(passData.novo!==passData.confirma){passErr.textContent='Nova senha e confirmação não coincidem.';passErr.style.display='block';return;}
+      ss({saving:true,error:null});
+      try{
+        // Verify current password
+        const currentHash=await hashPassword(passData.current);
+        const {data:op}=await sb.from('operators').select('password_hash').eq('email',state.manager.email).single();
+        if(op?.password_hash&&op.password_hash!==currentHash){
+          ss({saving:false});passErr.textContent='Senha atual incorreta.';passErr.style.display='block';return;
+        }
+        // Save new password
+        const newHash=await hashPassword(passData.novo);
+        await sb.from('operators').update({password_hash:newHash}).eq('email',state.manager.email);
+        ss({saving:false,success:'Senha alterada com sucesso!'});
+        setTimeout(()=>ss({success:null}),3000);
+      }catch(e){ss({saving:false,error:'Erro ao alterar senha.'});}
+    }},'🔒  Alterar Senha')
+  ));
+  frag.appendChild(passCard);
   return frag;
 }
 
-// ── UNIT SELECT ───────────────────────────────────────────────────────────
-function renderUnitSelect(){
-  const {units,saving,modal,modalData}=state;
-  const root=h('div',{style:{display:'flex',flexDirection:'column',minHeight:'100vh',background:'#F0F3F9'}});
 
-  // Top bar
-  const tb=h('div',{className:'top-bar'});
-  tb.appendChild(h('span',{className:'top-bar-logo'},'☑ Confere'));
-  tb.appendChild(h('span',{className:'top-bar-sub'},'· Selecionar Unidade'));
-  const userDiv=div({className:'top-bar-user'});
-  userDiv.appendChild(h('span',{className:'top-bar-name'},state.manager?.name));
-  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:logout},'Sair'));
-  tb.appendChild(userDiv);
-  root.appendChild(tb);
-
-  // Content
-  const wrap=div({display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'32px 16px',flex:1});
-  const card=div({background:'#fff',border:'1px solid #D0D0D0',width:'100%',maxWidth:'540px',padding:'0'});
-
-  // Header do card
-  card.appendChild(div({background:'#1A237E',padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'},
-    div({},
-      div({fontSize:15,fontWeight:700,color:'#fff',letterSpacing:'.02em'},'Em qual unidade você está?'),
-      div({fontSize:12,color:'rgba(255,255,255,.6)',marginTop:3},'Selecione para ver o dashboard daquela unidade')
-    ),
-    h('button',{className:'btn',style:{background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.3)',color:'#fff',fontSize:11,fontWeight:700,padding:'6px 12px',cursor:'pointer',fontFamily:"'Roboto',sans-serif",letterSpacing:'.05em'},onClick:()=>ss({modal:'unit',modalData:{active:true}})},'+ Nova Unidade')
-  ));
-
-  // Lista de unidades
-  const activeUnits=units.filter(u=>u.active!==false);
-  if(activeUnits.length===0){
-    card.appendChild(div({padding:'32px',textAlign:'center'},
-      div({fontSize:32,marginBottom:12},'🏪'),
-      div({fontSize:14,fontWeight:700,color:'#555',marginBottom:6},'Nenhuma unidade cadastrada'),
-      div({fontSize:12,color:'#999',marginBottom:16},'Cadastre sua primeira unidade para continuar'),
-      h('button',{className:'btn btn-primary',style:{padding:'10px 20px'},onClick:()=>ss({modal:'unit',modalData:{active:true}})},'+ Cadastrar Unidade')
-    ));
-  }
-
-  activeUnits.forEach(unit=>{
-    const opCount=state.operators.filter(o=>o.unit_id===unit.id&&o.active).length;
-    const row=h('button',{className:'btn',
-      onClick:()=>ss({selectedUnit:unit,screen:'dashboard',tab:'overview',modal:null}),
-      style:{background:'#fff',border:'none',borderBottom:'1px solid #EBEBEB',padding:'16px 20px',
-        display:'flex',alignItems:'center',gap:14,width:'100%',cursor:'pointer',textAlign:'left',transition:'background .15s'}});
-    row.addEventListener('mouseover',()=>row.style.background='#F5F7FF');
-    row.addEventListener('mouseout',()=>row.style.background='#fff');
-    row.appendChild(div({width:44,height:44,borderRadius:'50%',background:'#E8EAF6',
-      display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0},'🏪'));
-    row.appendChild(div({flex:1},
-      div({fontSize:15,fontWeight:700,color:'#1A237E'},unit.name),
-      div({fontSize:12,color:'#777',marginTop:3},opCount+' operador'+(opCount!==1?'es ativos':'ativo'))
-    ));
-    row.appendChild(h('span',{style:{fontSize:22,color:'#AEAEB2'}},'›'));
-    card.appendChild(row);
-  });
-
-  wrap.appendChild(card);
-  root.appendChild(wrap);
-
-  // Modal nova unidade (reutilizado)
-  if(modal==='unit'){
-    const md=modalData;
-    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
-    const g=div({className:'form-group'});
-    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade *'));
-    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';
-    inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
-    inp.addEventListener('input',e=>{md.name=e.target.value;});
-    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
-      h('button',{className:'btn btn-gray',style:{padding:'10px 20px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
-      h('button',{className:'btn btn-primary',style:{padding:'10px 24px'},disabled:saving,onClick:async()=>{
-        if(!(md.name||'').trim()){ss({error:'Nome obrigatório.'});return;}
-        ss({saving:true});
-        await sb.from('units').insert({name:md.name,active:true,company_id:COMPANY_ID});
-        await reload();
-        ss({saving:false,modal:null,modalData:{},screen:'unit_select'});
-      }},saving?'Salvando...':'💾  Salvar')
-    ));
-    overlay.appendChild(m);root.appendChild(overlay);
-  }
-
-  return root;
-}
-
-// ── DASHBOARD ─────────────────────────────────────────────────────────────
-function renderDashboard(){
-  const {manager,tab}=state;
-  const root=h('div',{style:{display:'flex',flexDirection:'column',minHeight:'100vh'}});
-
-  // Top bar
-  const tb=h('div',{className:'top-bar'});
-  tb.appendChild(h('span',{className:'top-bar-logo'},'☑ Confere'));
-  const unitLabel=state.selectedUnit?.name||'';
-  tb.appendChild(h('span',{className:'top-bar-sub'},'· '+unitLabel));
-  const userDiv=div({className:'top-bar-user'});
-  userDiv.appendChild(h('button',{className:'top-bar-logout',
-    style:{background:'rgba(255,255,255,.15)',marginRight:6},
-    onClick:()=>ss({screen:'unit_select',selectedUnit:null,tab:'overview'})},'🔄 Trocar unidade'));
-  userDiv.appendChild(h('span',{className:'top-bar-name'},manager.name));
-  userDiv.appendChild(h('button',{className:'top-bar-logout',onClick:()=>logout()},'Sair'));
-  tb.appendChild(userDiv);
-  root.appendChild(tb);
-
-  // Nav
-  const nav=h('div',{className:'nav'});
-  [['overview','🏠  Visão Geral'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['documents','📄  Documentação'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
-    nav.appendChild(h('button',{className:`nav-tab${tab===id?' active':''}`,onClick:()=>ss({tab:id,modal:null,error:null,success:null})},label));
-  });
-  root.appendChild(nav);
-
-  // Content
-  const content=div({className:'content fade'});
-  if(tab==='overview')content.appendChild(renderOverview());
-  else if(tab==='units'){try{content.appendChild(renderUnits());}catch(e){console.error('renderUnits error:',e);content.appendChild(h('div',{style:{padding:'20px',color:'#C62828',fontWeight:'700'}},'Erro ao carregar unidades. Tente novamente.'));}}
-  else if(tab==='operators')content.appendChild(renderOperators());
-  else if(tab==='checklists')content.appendChild(renderChecklists());
-  else if(tab==='documents')content.appendChild(renderDocuments());
-  else if(tab==='settings')content.appendChild(renderSettings());
-  root.appendChild(content);
-
-  return root;
-}
-
-// ── RENDER ─────────────────────────────────────────────────────────────────
 function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
