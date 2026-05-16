@@ -85,8 +85,8 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-si
 .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 
 /* Modal */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
-.modal{background:#fff;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:#fff !important;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease;box-shadow:0 8px 32px rgba(0,0,0,.25)}
 .modal-hdr{background:#1A237E;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
 .modal-hdr span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 .modal-close{background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;font-family:'Roboto',sans-serif}
@@ -663,7 +663,7 @@ function renderUnits(){
   // Modal unidade
   if(modal==='unit'){
     const md=modalData;const isEdit=!!md.id;
-    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
     const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
     m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'✏️  Editar Unidade':'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
     const mb=div({className:'modal-body'});
@@ -832,8 +832,8 @@ function renderChecklists(){
   // Modal checklist (info básica)
   if(modal==='checklist'){
     const md=modalData;const isEdit=!!md.id;
-    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px',background:'#fff'}});
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px',background:'#fff',boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
     m.appendChild(div({className:'modal-hdr',style:{padding:'16px 20px',display:'flex',alignItems:'center',gap:8}},
       h('span',{style:{fontSize:15,flex:1}},isEdit?'Editar Checklist':'Novo Checklist'),
       h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
@@ -1362,7 +1362,7 @@ function renderUnitSelect(){
   wrap.appendChild(card);root.appendChild(wrap);
   if(modal==='unit'){
     const md=modalData;
-    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
     const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
     m.appendChild(div({className:'modal-hdr'},h('span',{},'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
     const mb=div({className:'modal-body'});
@@ -1432,7 +1432,7 @@ function renderDocuments(){
   if(modal==='document'){
     const md=modalData;const isEdit=!!md.id;
     let expiryInp=null,selectedFile=null;
-    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
     const m=div({className:'modal',style:{maxWidth:'580px',background:'#fff',borderRadius:'4px',maxHeight:'90vh',overflowY:'auto'}});
     m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
     const mb=div({className:'modal-body'});
