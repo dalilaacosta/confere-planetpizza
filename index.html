@@ -114,7 +114,7 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 async function init(){
   try{
     const {data:ops}=await sb.from('operators').select('*').eq('active',true).order('name');
-    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('active',true).order('sector');
+    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position))').eq('active',true).order('sector');
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();
@@ -546,7 +546,11 @@ function renderExec(){
   scr.appendChild(topBar('📋',activeList.name.toUpperCase()));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
   const sub=div({background:C.navy,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0});
-  sub.appendChild(div({},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},'ETAPA'),div({fontSize:14,color:'#fff',fontWeight:700,marginTop:1},(stepIdx+1)+' DE '+total)));
+  const stepName=step.name&&step.name!=='Etapa'?step.name:'';
+  sub.appendChild(div({},
+    div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},'ETAPA '+(stepIdx+1)+' DE '+total),
+    stepName?div({fontSize:15,color:'#fff',fontWeight:700,marginTop:2},stepName):div({fontSize:13,color:'rgba(255,255,255,.7)',marginTop:2},'Etapa '+(stepIdx+1))
+  ));
   sub.appendChild(div({textAlign:'right'},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},'PROGRESSO'),div({fontSize:14,color:'#FFD54F',fontWeight:700,marginTop:1},prog+'%')));
   scr.appendChild(sub);
   scr.appendChild(h('div',{className:'prog-track'},h('div',{className:'prog-fill',style:{width:prog+'%'}})));

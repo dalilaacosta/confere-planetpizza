@@ -233,7 +233,7 @@ async function init(){
   try{
     const [opsR,clsR,unitsR]=await Promise.all([
       sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
-      sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
+      sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
       sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     ]);
     const cls=clsR.data||[];
@@ -270,7 +270,7 @@ async function reload(){
   const currentTab=state.tab;
   const [opsR,clsR,unitsR,issR,docsR]=await Promise.all([
     sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
-    sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
+    sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
     sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false}),
     sb.from('documents').select('*, units(name)').eq('company_id',COMPANY_ID).order('expiry_date'),
@@ -978,13 +978,16 @@ function renderChecklists(){
         parsedList.appendChild(row);
       });
 
-      const saveAllBtn=h('button',{className:'btn btn-success',style:{width:'100%',marginTop:10,fontSize:13,padding:'12px'},onClick:async()=>{
+      // Captura o nome da etapa no momento da pré-visualização
+    const capturedName=stepNameInp.value.trim();
+    const saveAllBtn=h('button',{className:'btn btn-success',style:{width:'100%',marginTop:10,fontSize:13,padding:'12px'},onClick:async()=>{
         if(!parsedItems.length)return;
         saveAllBtn.disabled=true;saveAllBtn.textContent='Salvando...';
         try{
           const basePos=(cl.checklist_steps||[]).filter(s=>s.position<999).length;
-          const stepName=stepNameInp.value.trim()||('Etapa '+(basePos+1));
-          const{data:step}=await sb.from('checklist_steps').insert({checklist_id:cl.id,position:basePos+1,name:stepName}).select().single();
+          const stepName=capturedName||stepNameInp.value.trim()||('Etapa '+(basePos+1));
+          const{data:step,error:stepErr}=await sb.from('checklist_steps').insert({checklist_id:cl.id,position:basePos+1,name:stepName}).select().single();
+          if(stepErr)throw stepErr;
           for(let k=0;k<parsedItems.length;k++){
             await sb.from('step_items').insert({step_id:step.id,type:parsedItems[k].type,label:parsedItems[k].label,position:k+1});
           }
@@ -1013,8 +1016,8 @@ function renderChecklists(){
         const hdr=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}});
         const badge=h('div',{style:{width:26,height:26,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',flexShrink:0}},String(si+1));
         const nameInp=document.createElement('input');nameInp.type='text';nameInp.className='form-inp';
-        nameInp.value=step.name||('Etapa '+(si+1));nameInp.style.fontWeight='700';nameInp.style.fontSize='13px';
-        nameInp.addEventListener('change',async e=>{await sb.from('checklist_steps').update({name:e.target.value}).eq('id',step.id);});
+        nameInp.value=(step.name&&step.name!=='Etapa')?step.name:'';nameInp.placeholder='Nome da etapa (ex: Limpeza do Balcão)';nameInp.style.fontWeight='700';nameInp.style.fontSize='13px';
+        const saveStepName=async(v)=>{if(v.trim())await sb.from('checklist_steps').update({name:v.trim()}).eq('id',step.id);}; nameInp.addEventListener('blur',e=>saveStepName(e.target.value)); nameInp.addEventListener('keydown',e=>{if(e.key==='Enter')saveStepName(e.target.value);});
         hdr.appendChild(badge);hdr.appendChild(nameInp);
         hdr.appendChild(h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:async()=>{if(confirm('Remover etapa?'))await deleteStep(step.id);}},'Remover'));
         sc.appendChild(hdr);
