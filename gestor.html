@@ -1017,8 +1017,13 @@ function renderChecklists(){
         const badge=h('div',{style:{width:26,height:26,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',flexShrink:0}},String(si+1));
         const nameInp=document.createElement('input');nameInp.type='text';nameInp.className='form-inp';
         nameInp.value=(step.name&&step.name!=='Etapa')?step.name:'';nameInp.placeholder='Nome da etapa (ex: Limpeza do Balcão)';nameInp.style.fontWeight='700';nameInp.style.fontSize='13px';
-        const saveStepName=async(v)=>{if(v.trim())await sb.from('checklist_steps').update({name:v.trim()}).eq('id',step.id);}; nameInp.addEventListener('blur',e=>saveStepName(e.target.value)); nameInp.addEventListener('keydown',e=>{if(e.key==='Enter')saveStepName(e.target.value);});
-        hdr.appendChild(badge);hdr.appendChild(nameInp);
+        const saveStepName=async(v)=>{if(v.trim())await sb.from('checklist_steps').update({name:v.trim()}).eq('id',step.id);};
+        const saveNameBtn=h('button',{className:'btn btn-primary btn-sm',style:{flexShrink:0},onClick:async()=>{
+          await saveStepName(nameInp.value);
+          saveNameBtn.textContent='✓';
+          setTimeout(()=>{saveNameBtn.textContent='💾';},1500);
+        }},'💾');
+        hdr.appendChild(badge);hdr.appendChild(nameInp);hdr.appendChild(saveNameBtn);
         hdr.appendChild(h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:async()=>{if(confirm('Remover etapa?'))await deleteStep(step.id);}},'Remover'));
         sc.appendChild(hdr);
         // Itens
