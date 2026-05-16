@@ -593,6 +593,87 @@ function renderOverview(){
   frag.appendChild(actList);
   return frag;
 }
+// ── TAB: UNITS ────────────────────────────────────────────────────────────
+function renderUnits(){
+  const {units,modal,modalData,saving,error,success}=state;
+  const frag=document.createDocumentFragment();
+  if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
+  if(error)frag.appendChild(h('div',{className:'err-bar'},error));
+
+  // Botão destaque
+  frag.appendChild(div({display:'flex',justifyContent:'flex-end',marginBottom:12},
+    h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:13},
+      onClick:()=>ss({modal:'unit',modalData:{active:true}})},'+ Nova Unidade')
+  ));
+
+  const active=units.filter(u=>u.active!==false);
+  const inactive=units.filter(u=>u.active===false);
+
+  frag.appendChild(sec('🏪  Unidades',units.length+' cadastradas'));
+  const tbl=h('table',{className:'tbl tbl-card'});
+  tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome da Unidade'),h('th',{},'Operadores'),h('th',{},'Status'),h('th',{},'Ações'))));
+  const tbody=h('tbody',{});
+
+  [...active,...inactive].forEach(u=>{
+    const opCount=state.operators.filter(o=>o.unit_id===u.id).length;
+    const isActive=u.active!==false;
+    tbody.appendChild(h('tr',{},
+      h('td',{'data-label':'Unidade',style:{fontWeight:700,color:isActive?'#1A237E':'#999'}},u.name),
+      h('td',{'data-label':'Operadores',style:{color:'#555'}},opCount+' operador'+(opCount!==1?'es':'')),
+      h('td',{'data-label':'Status'},h('span',{className:`tag ${isActive?'tag-green':'tag-red'}`},isActive?'ATIVA':'INATIVA')),
+      h('td',{},
+        h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'unit',modalData:{...u}})},'Editar'),
+        h('button',{className:`btn btn-sm ${isActive?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
+          await sb.from('units').update({active:!isActive}).eq('id',u.id);await reload();
+        }},isActive?'Desativar':'Ativar'),
+        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
+          if(opCount>0){alert('Não é possível excluir: unidade tem operadores. Transfira-os primeiro.');return;}
+          if(confirm('Excluir "'+u.name+'"? Esta ação não pode ser desfeita.')){
+            await sb.from('units').delete().eq('id',u.id);
+            await reload();ss({success:'Unidade excluída!'});setTimeout(()=>ss({success:null}),3000);
+          }
+        }},'Excluir')
+      )
+    ));
+  });
+
+  if(units.length===0){
+    tbody.appendChild(h('tr',{},h('td',{colSpan:4,style:{textAlign:'center',color:'#999',padding:'24px'}},'Nenhuma unidade cadastrada.')));
+  }
+
+  tbl.appendChild(tbody);frag.appendChild(tbl);
+
+  // Modal unidade
+  if(modal==='unit'){
+    const md=modalData;const isEdit=!!md.id;
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
+    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'✏️  Editar Unidade':'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=div({className:'modal-body'});
+    const g=div({className:'form-group'});
+    g.appendChild(h('label',{className:'form-label'},'Nome da Unidade *'));
+    const inp=document.createElement('input');inp.type='text';inp.className='form-inp';
+    inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
+    inp.addEventListener('input',e=>{md.name=e.target.value;});
+    g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
+    m.appendChild(div({className:'modal-footer'},
+      h('button',{className:'btn btn-gray',style:{padding:'10px 20px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',style:{padding:'10px 24px'},disabled:saving,onClick:async()=>{
+        if(!(md.name||'').trim()){ss({error:'Nome é obrigatório.'});return;}
+        ss({saving:true});
+        if(isEdit){await sb.from('units').update({name:md.name}).eq('id',md.id);}
+        else{await sb.from('units').insert({name:md.name,active:true,company_id:COMPANY_ID});}
+        await reload();
+        ss({saving:false,modal:null,modalData:{},success:isEdit?'Unidade atualizada!':'Unidade criada!'});
+        setTimeout(()=>ss({success:null}),3000);
+      }},saving?'Salvando...':'💾  Salvar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
+  return frag;
+}
+
 // ── TAB: OPERATORS ────────────────────────────────────────────────────────
 function renderOperators(){
   const {operators,units,modal,modalData,saving,error,success}=state;
@@ -600,7 +681,10 @@ function renderOperators(){
   if(success)frag.appendChild(h('div',{className:'ok-bar'},success));
   if(error)frag.appendChild(h('div',{className:'err-bar'},error));
 
-  frag.appendChild(sec('Operadores Cadastrados',operators.length+' total','+ Novo Operador',()=>ss({modal:'operator',modalData:{access_level:'operator',active:true}})));
+  frag.appendChild(div({display:'flex',justifyContent:'flex-end',marginBottom:12},
+    h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:13},onClick:()=>ss({modal:'operator',modalData:{access_level:'operator',active:true}})},'+ Novo Operador')
+  ));
+  frag.appendChild(sec('Operadores Cadastrados',operators.length+' total'));
 
   const tbl=h('table',{className:'tbl'});
   tbl.className='tbl tbl-card';tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Nome'),h('th',{},'Setor'),h('th',{},'Unidade'),h('th',{},'Nível'),h('th',{},'PIN'),h('th',{},'Status'),h('th',{},'Ações'))));
