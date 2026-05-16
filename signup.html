@@ -155,7 +155,7 @@ async function doSignup(){
     showOk('✅ Conta criada com sucesso!<br>Redirecionando para o painel...');
     
     // Salva sessão
-    sessionStorage.setItem('confere_user',JSON.stringify({
+    localStorage.setItem('confere_user',JSON.stringify({
       name:mgrName,email,access_level:'manager',
       company_id:company.id,company_name:companyName
     }));

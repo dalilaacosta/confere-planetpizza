@@ -189,7 +189,7 @@ const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable
 
 // ── SESSION ───────────────────────────────────────────────────────────────
 function getSession(){
-  try{return JSON.parse(sessionStorage.getItem('confere_user'));}
+  try{return JSON.parse(localStorage.getItem('confere_user'));}
   catch(e){return null;}
 }
 function requireAuth(){
@@ -198,7 +198,7 @@ function requireAuth(){
   return s;
 }
 function logout(){
-  sessionStorage.removeItem('confere_user');
+  localStorage.removeItem('confere_user');
   window.location.href='login.html';
 }
 const SESSION=getSession();
@@ -237,7 +237,7 @@ async function init(){
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
     ss({screen:'dashboard',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[]});
-  }catch(e){ss({screen:'login',error:'Erro ao conectar.'});}
+  }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
 }
 
 async function loadExecs(){
@@ -1120,7 +1120,7 @@ function renderDashboard(){
   // Content
   const content=div({className:'content fade'});
   if(tab==='overview')content.appendChild(renderOverview());
-  else if(tab==='units')content.appendChild(renderUnits());
+  else if(tab==='units'){try{content.appendChild(renderUnits());}catch(e){console.error('renderUnits error:',e);content.appendChild(h('div',{style:{padding:'20px',color:'#C62828',fontWeight:'700'}},'Erro ao carregar unidades. Tente novamente.'));}}
   else if(tab==='operators')content.appendChild(renderOperators());
   else if(tab==='checklists')content.appendChild(renderChecklists());
   else if(tab==='documents')content.appendChild(renderDocuments());

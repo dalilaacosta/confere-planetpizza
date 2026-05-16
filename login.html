@@ -93,7 +93,7 @@ async function doLogin(){
     }
 
     // Salva sessão
-    sessionStorage.setItem('confere_user',JSON.stringify({
+    localStorage.setItem('confere_user',JSON.stringify({
       id:op.id,name:op.name,email:op.email,
       access_level:op.access_level,
       company_id:op.company_id,
@@ -117,7 +117,7 @@ async function hashPassword(password){
 // Enter key
 document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 // Check if already logged in
-const saved=sessionStorage.getItem('confere_user');
+const saved=localStorage.getItem('confere_user');
 if(saved){window.location.href='gestor.html';}
 </script>
 </body>
