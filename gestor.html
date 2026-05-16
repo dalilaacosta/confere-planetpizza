@@ -1339,13 +1339,9 @@ function render(){
     }
   }catch(err){
     console.error('Render error:',err);
-    const errMsg=err?.message||String(err)||'Erro desconhecido';
-    c=div({display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:12,padding:'20px'},
-      div({fontSize:32},'⚠️'),
-      div({fontSize:14,fontWeight:700,color:'#C62828',marginBottom:4},'Erro ao carregar. Recarregue a página.'),
-      div({fontSize:12,color:'#888',fontFamily:'monospace',background:'#F5F5F5',padding:'8px 12px',maxWidth:'500px',wordBreak:'break-all'},errMsg),
-      h('button',{onclick:'location.reload()',style:{marginTop:8,padding:'8px 20px',background:'#1A237E',color:'#fff',border:'none',cursor:'pointer',fontFamily:"'Roboto',sans-serif",fontWeight:700}},'Recarregar')
-    );
+    // Use plain innerHTML to avoid any dependency on h() or div()
+    root.innerHTML='<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px;padding:20px;font-family:Roboto,sans-serif"><div style="font-size:32px">⚠️</div><div style="font-size:14px;font-weight:700;color:#C62828">Erro ao carregar</div><div style="font-size:12px;color:#555;background:#f5f5f5;padding:8px 12px;max-width:500px;word-break:break-all;font-family:monospace">'+(err?.message||String(err))+'</div><button onclick="location.reload()" style="margin-top:8px;padding:10px 24px;background:#1A237E;color:#fff;border:none;cursor:pointer;font-family:Roboto,sans-serif;font-weight:700">Recarregar</button></div>';
+    return;
   }
   if(c)root.appendChild(c);
 }
