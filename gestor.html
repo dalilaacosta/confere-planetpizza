@@ -930,140 +930,121 @@ function renderChecklists(){
     ));
     const mb=h('div',{className:'modal-body',style:{padding:'20px'}});
 
-    // ── CONSTRUTOR DE NOVAS ETAPAS ───────────────────────────────────────
-    const builderBox=h('div',{style:{background:'#F0F4FF',border:'1.5px solid #1565C0',padding:'16px',marginBottom:'20px'}});
-    builderBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#1565C0',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:12}},'⚡  Adicionar etapas'));
+    // ── QUICK IMPORT ─────────────────────────────────────────────────────
+    const importBox=h('div',{style:{background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:20}});
+    importBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#1565C0',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:8}},'⚡  Adicionar etapas em lote'));
+    importBox.appendChild(h('div',{style:{fontSize:12,color:'#555',marginBottom:12}},'Dê um nome à etapa, cole os itens (um por linha), pré-visualize para definir os tipos e salve tudo de uma vez.'));
 
-    // Container dinâmico de etapas a criar
-    const stepsContainer=h('div',{});
-    let newSteps=[{name:'',items:'',type:'check'}]; // array de etapas a criar
+    // Nome da etapa
+    const stepNameGroup=h('div',{style:{marginBottom:10}});
+    stepNameGroup.appendChild(h('label',{className:'form-label'},'Nome da Etapa'));
+    const stepNameInp=document.createElement('input');
+    stepNameInp.type='text';stepNameInp.className='form-inp';
+    stepNameInp.placeholder='Ex: Limpeza do Balcão, Verificação de Equipamentos...';
+    stepNameGroup.appendChild(stepNameInp);
+    importBox.appendChild(stepNameGroup);
 
-    function rebuildStepsUI(){
-      stepsContainer.innerHTML='';
-      newSteps.forEach((step,si)=>{
-        const sc=h('div',{style:{background:'#fff',border:'1px solid #D0D0D0',padding:'14px',marginBottom:'10px'}});
-        
-        // Linha topo: número + nome da etapa + remover
-        const topRow=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}});
-        const badge=h('div',{style:{width:26,height:26,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',flexShrink:0}},String(si+1));
-        const nameInp=document.createElement('input');
-        nameInp.type='text';nameInp.className='form-inp';
-        nameInp.placeholder='Nome da etapa (ex: Limpeza do Balcão)';
-        nameInp.value=step.name;
-        nameInp.addEventListener('input',e=>{newSteps[si].name=e.target.value;});
-        const rmBtn=newSteps.length>1?h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:()=>{newSteps.splice(si,1);rebuildStepsUI();}},'✕'):'';
-        topRow.appendChild(badge);topRow.appendChild(nameInp);if(rmBtn)topRow.appendChild(rmBtn);
-        sc.appendChild(topRow);
+    // Itens em lote
+    const itemsGroup=h('div',{style:{marginBottom:10}});
+    itemsGroup.appendChild(h('label',{className:'form-label'},'Itens da Etapa (um por linha)'));
+    const bulkArea=document.createElement('textarea');
+    bulkArea.className='form-inp';bulkArea.rows=5;
+    bulkArea.placeholder='Um item por linha: Limpar bancada, Higienizar equipamentos...';
+    Object.assign(bulkArea.style,{fontSize:'13px',lineHeight:'1.6',display:'block'});
+    itemsGroup.appendChild(bulkArea);
+    importBox.appendChild(itemsGroup);
 
-        // Tipo dos itens
-        const typeRow=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}});
-        typeRow.appendChild(h('span',{style:{fontSize:11,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',flexShrink:0}},'Tipo dos itens:'));
-        const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='180px';
-        [['check','✓ Confirmação (Sim/Não)'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
-          const o=document.createElement('option');o.value=v;o.textContent=l;if(step.type===v)o.selected=true;typeSelect.appendChild(o);
+    const parsedList=h('div',{style:{display:'none'}});
+    let parsedItems=[];
+
+    const parseBtn=h('button',{className:'btn btn-primary',style:{fontSize:12,padding:'8px 16px'},onClick:()=>{
+      const lines=bulkArea.value.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+      if(!lines.length)return;
+      parsedItems=lines.map(label=>({label,type:'check'}));
+      parsedList.innerHTML='';
+      parsedList.style.display='block';
+      parsedList.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#555',letterSpacing:'.06em',textTransform:'uppercase',margin:'10px 0 8px'}},parsedItems.length+' itens — defina o tipo de cada um:'));
+      parsedItems.forEach((item,i)=>{
+        const row=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6,padding:'8px',background:'#fff',border:'1px solid #D0D0D0'}});
+        const num=h('div',{style:{width:22,height:22,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}},String(i+1));
+        const labelEl=h('span',{style:{flex:1,fontSize:13,color:'#1A1A1A'}},item.label);
+        const typeSelect=document.createElement('select');typeSelect.className='form-select';
+        Object.assign(typeSelect.style,{width:'160px',flexShrink:'0',fontSize:'12px'});
+        [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
+          const o=document.createElement('option');o.value=v;o.textContent=l;typeSelect.appendChild(o);
         });
-        typeSelect.addEventListener('change',e=>{newSteps[si].type=e.target.value;});
-        typeRow.appendChild(typeSelect);
-        sc.appendChild(typeRow);
-
-        // Itens (um por linha)
-        sc.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}},'Itens da etapa (um por linha):'));
-        const ta=document.createElement('textarea');ta.className='form-inp';ta.rows=4;
-        ta.placeholder='Um item por linha: Limpar bancada, Higienizar equipamentos...';
-        ta.style.fontSize='13px';ta.style.lineHeight='1.6';
-        ta.value=step.items;
-        ta.addEventListener('input',e=>{newSteps[si].items=e.target.value;});
-        sc.appendChild(ta);
-        stepsContainer.appendChild(sc);
+        typeSelect.addEventListener('change',e=>{parsedItems[i].type=e.target.value;});
+        row.appendChild(num);row.appendChild(labelEl);row.appendChild(typeSelect);
+        parsedList.appendChild(row);
       });
-    }
-    rebuildStepsUI();
 
-    // Botão adicionar etapa
-    const addStepBtn=h('button',{className:'btn',style:{background:'#E8EAF6',border:'1px solid #1A237E',color:'#1A237E',fontSize:12,fontWeight:700,padding:'8px 16px',cursor:'pointer',fontFamily:"'Roboto',sans-serif",letterSpacing:'.04em',width:'100%',marginTop:4},
-      onClick:()=>{newSteps.push({name:'',items:'',type:'check'});rebuildStepsUI();}},'+ Adicionar Outra Etapa');
-
-    // Botão salvar tudo
-    const saveStatus=h('div',{style:{fontSize:12,color:'#2E7D32',fontWeight:700,marginTop:8,display:'none'}});
-    const saveAllBtn=h('button',{className:'btn btn-success',style:{width:'100%',marginTop:10,fontSize:14,padding:'12px'},onClick:async()=>{
-      const validSteps=newSteps.filter(s=>s.items.trim().length>0);
-      if(!validSteps.length){alert('Adicione ao menos um item em uma etapa.');return;}
-      saveAllBtn.disabled=true;saveAllBtn.textContent='Salvando...';
-      try{
-        const basePos=(cl.checklist_steps||[]).filter(s=>s.position<999).length;
-        for(let g=0;g<validSteps.length;g++){
-          const step=validSteps[g];
-          const items=step.items.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-          if(!items.length)continue;
-          const stepName=step.name.trim()||('Etapa '+(basePos+g+1));
-          const{data:newStep}=await sb.from('checklist_steps').insert({checklist_id:cl.id,position:basePos+g+1,name:stepName}).select().single();
-          for(let k=0;k<items.length;k++){
-            await sb.from('step_items').insert({step_id:newStep.id,type:step.type,label:items[k],position:k+1});
+      const saveAllBtn=h('button',{className:'btn btn-success',style:{width:'100%',marginTop:10,fontSize:13,padding:'12px'},onClick:async()=>{
+        if(!parsedItems.length)return;
+        saveAllBtn.disabled=true;saveAllBtn.textContent='Salvando...';
+        try{
+          const basePos=(cl.checklist_steps||[]).filter(s=>s.position<999).length;
+          const stepName=stepNameInp.value.trim()||('Etapa '+(basePos+1));
+          const{data:step}=await sb.from('checklist_steps').insert({checklist_id:cl.id,position:basePos+1,name:stepName}).select().single();
+          for(let k=0;k<parsedItems.length;k++){
+            await sb.from('step_items').insert({step_id:step.id,type:parsedItems[k].type,label:parsedItems[k].label,position:k+1});
           }
-        }
-        await reload();
-        const updated=state.checklists.find(c=>c.id===cl.id);
-        newSteps=[{name:'',items:'',type:'check'}];
-        saveStatus.textContent='✅ Etapas salvas com sucesso!';saveStatus.style.display='block';
-        rebuildStepsUI();
-        if(updated)ss({modal:'steps',modalData:updated});
-      }catch(e){alert('Erro ao salvar: '+e.message);}
-      saveAllBtn.disabled=false;saveAllBtn.textContent='💾 Salvar Etapas';
-    }},'💾 Salvar Etapas');
+          await reload();
+          const updated=state.checklists.find(c=>c.id===cl.id);
+          parsedItems=[];parsedList.innerHTML='';parsedList.style.display='none';
+          bulkArea.value='';stepNameInp.value='';
+          if(updated)ss({modal:'steps',modalData:updated});
+        }catch(e){alert('Erro: '+e.message);}
+        saveAllBtn.disabled=false;saveAllBtn.textContent='💾 Salvar esta etapa';
+      }},'💾 Salvar esta etapa');
+      parsedList.appendChild(saveAllBtn);
+    }},'→ Pré-visualizar itens');
 
-    builderBox.appendChild(stepsContainer);
-    builderBox.appendChild(addStepBtn);
-    builderBox.appendChild(saveAllBtn);
-    builderBox.appendChild(saveStatus);
-    mb.appendChild(builderBox);
+    importBox.appendChild(parseBtn);
+    importBox.appendChild(parsedList);
+    mb.appendChild(importBox);
 
     // ── ETAPAS EXISTENTES ─────────────────────────────────────────────────
-    if(cl.checklist_steps&&cl.checklist_steps.length>0){
-      const visSteps=cl.checklist_steps.filter(s=>s.position<999);
-      if(visSteps.length>0){
-        mb.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#777',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:10}},visSteps.length+' etapa'+(visSteps.length!==1?'s':'')+' já cadastrada'+(visSteps.length!==1?'s':'')));
-        visSteps.forEach((step,si)=>{
-          const sc=h('div',{style:{background:'#F9F9F9',border:'1px solid #D0D0D0',padding:'12px',marginBottom:'8px'}});
-          
-          // Header da etapa com nome editável
-          const hdr=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}});
-          const badge=h('div',{style:{width:26,height:26,background:'#546E7A',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',flexShrink:0}},String(si+1));
-          const nameInp=document.createElement('input');nameInp.type='text';nameInp.className='form-inp';
-          nameInp.value=step.name||('Etapa '+(si+1));nameInp.style.fontSize='13px';nameInp.style.fontWeight='700';
-          nameInp.addEventListener('change',async e=>{await sb.from('checklist_steps').update({name:e.target.value}).eq('id',step.id);});
-          hdr.appendChild(badge);hdr.appendChild(nameInp);
-          hdr.appendChild(h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:async()=>{if(confirm('Remover etapa "'+(step.name||'Etapa '+(si+1))+'" e seus itens?'))await deleteStep(step.id);}},'Remover'));
-          sc.appendChild(hdr);
-
-          // Itens da etapa
-          step.step_items.forEach(item=>{
-            const ir=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6}});
-            const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='150px';typeSelect.style.fontSize='12px';
-            [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
-              const o=document.createElement('option');o.value=v;o.textContent=l;if(item.type===v)o.selected=true;typeSelect.appendChild(o);
-            });
-            const labelInp=document.createElement('input');labelInp.type='text';labelInp.className='form-inp';labelInp.value=item.label;labelInp.style.fontSize='13px';
-            ir.appendChild(typeSelect);ir.appendChild(labelInp);
-            ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{await saveItem(step.id,typeSelect.value,labelInp.value,item.position,item.id);}},'💾'));
-            ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover item?'))await deleteItem(item.id);}},'×'));
-            sc.appendChild(ir);
+    const visSteps=(cl.checklist_steps||[]).filter(s=>s.position<999);
+    if(visSteps.length>0){
+      mb.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#777',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:10}},visSteps.length+' etapa'+(visSteps.length!==1?'s':'')+' cadastrada'+(visSteps.length!==1?'s':'')));
+      visSteps.forEach((step,si)=>{
+        const sc=h('div',{style:{background:'#F9F9F9',border:'1px solid #D0D0D0',padding:'12px',marginBottom:'8px'}});
+        // Header com nome editável
+        const hdr=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}});
+        const badge=h('div',{style:{width:26,height:26,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',flexShrink:0}},String(si+1));
+        const nameInp=document.createElement('input');nameInp.type='text';nameInp.className='form-inp';
+        nameInp.value=step.name||('Etapa '+(si+1));nameInp.style.fontWeight='700';nameInp.style.fontSize='13px';
+        nameInp.addEventListener('change',async e=>{await sb.from('checklist_steps').update({name:e.target.value}).eq('id',step.id);});
+        hdr.appendChild(badge);hdr.appendChild(nameInp);
+        hdr.appendChild(h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:async()=>{if(confirm('Remover etapa?'))await deleteStep(step.id);}},'Remover'));
+        sc.appendChild(hdr);
+        // Itens
+        step.step_items.forEach(item=>{
+          const ir=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6}});
+          const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='150px';typeSelect.style.fontSize='12px';
+          [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
+            const o=document.createElement('option');o.value=v;o.textContent=l;if(item.type===v)o.selected=true;typeSelect.appendChild(o);
           });
-
-          // Novo item
-          const newRow=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,paddingTop:8,borderTop:'1px dashed #D0D0D0'}});
-          const newType=document.createElement('select');newType.className='form-select';newType.style.width='150px';newType.style.fontSize='12px';
-          [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;newType.appendChild(o);});
-          const newLabel=document.createElement('input');newLabel.type='text';newLabel.className='form-inp';newLabel.placeholder='Novo item...';newLabel.style.fontSize='13px';
-          newRow.appendChild(newType);newRow.appendChild(newLabel);
-          newRow.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
-            if(!newLabel.value.trim())return;
-            await saveItem(step.id,newType.value,newLabel.value.trim(),step.step_items.length+1,null);
-            newLabel.value='';
-          }},'+'));
-          sc.appendChild(newRow);
-          mb.appendChild(sc);
+          const labelInp=document.createElement('input');labelInp.type='text';labelInp.className='form-inp';labelInp.value=item.label;labelInp.style.fontSize='13px';
+          ir.appendChild(typeSelect);ir.appendChild(labelInp);
+          ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{await saveItem(step.id,typeSelect.value,labelInp.value,item.position,item.id);}},'💾'));
+          ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover item?'))await deleteItem(item.id);}},'×'));
+          sc.appendChild(ir);
         });
-      }
+        // Novo item
+        const nr=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,paddingTop:8,borderTop:'1px dashed #D0D0D0'}});
+        const nt=document.createElement('select');nt.className='form-select';nt.style.width='150px';nt.style.fontSize='12px';
+        [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;nt.appendChild(o);});
+        const nl=document.createElement('input');nl.type='text';nl.className='form-inp';nl.placeholder='Novo item...';nl.style.fontSize='13px';
+        nr.appendChild(nt);nr.appendChild(nl);
+        nr.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
+          if(!nl.value.trim())return;
+          await saveItem(step.id,nt.value,nl.value.trim(),step.step_items.length+1,null);
+          nl.value='';
+        }},'+'));
+        sc.appendChild(nr);
+        mb.appendChild(sc);
+      });
     }
 
     m.appendChild(mb);
