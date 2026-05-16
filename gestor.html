@@ -813,14 +813,13 @@ function renderChecklists(){
   sectors.forEach(sector=>{
     const sCls=checklists.filter(c=>(c.sector||'Geral')===sector);
     // Sector header row
-    const sRow=h('tr',{},h('td',{colSpan:6,style:{
-      background:'#1A237E',color:'#fff',fontWeight:700,fontSize:11,
-      letterSpacing:'.08em',textTransform:'uppercase',padding:'7px 14px',
-      display:'flex',alignItems:'center',justifyContent:'space-between'
-    }},
-      h('span',{},sector.toUpperCase()+' — '+sCls.length+' checklist'+(sCls.length!==1?'s':'')),
+    const sTd=h('td',{colSpan:6,style:{background:'#1A237E',padding:'0'}});
+    const sInner=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 14px'}},
+      h('span',{style:{color:'#fff',fontWeight:700,fontSize:11,letterSpacing:'.08em',textTransform:'uppercase'}},sector.toUpperCase()+' — '+sCls.length+' checklist'+(sCls.length!==1?'s':'')),
       h('button',{className:'btn',style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif",letterSpacing:'.04em'},onClick:()=>ss({modal:'checklist',modalData:{sector,frequency:'Diário',active:true}})},'+ Novo')
-    ));
+    );
+    sTd.appendChild(sInner);
+    const sRow=h('tr',{},sTd);
     tbody.appendChild(sRow);
 
     sCls.forEach(cl=>{
