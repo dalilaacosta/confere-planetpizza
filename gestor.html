@@ -890,9 +890,7 @@ function renderChecklists(){
     }
 
     mb.appendChild(inp('Nome do Checklist *','name','text','Ex: Limpeza de Abertura'));
-    mb.appendChild(div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px'}),
-    );
-    const row1=div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px'});
+    const row1=div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px',marginTop:'14px'});
     row1.appendChild(inp('Ícone','icon','text','📋'));
     row1.appendChild(sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha'],['Salão','Salão'],['Estoque','Estoque']]));
     row1.appendChild(sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']]));
