@@ -289,14 +289,15 @@ async function reload(){
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────
 async function saveOperator(data,id){
-  ss({saving:true});
+  const nav={screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab};
+  ss({saving:true,...nav});
   try{
     if(id){await sb.from('operators').update(data).eq('id',id);}
     else{await sb.from('operators').insert(data);}
     await reload();
-    ss({saving:false,modal:null,screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab,success:id?'Operador atualizado!':'Operador cadastrado!',modalData:{}});
-    setTimeout(()=>ss({success:null}),3000);
-  }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
+    ss({...nav,saving:false,modal:null,modalData:{},success:id?'Operador atualizado!':'Operador cadastrado!'});
+    setTimeout(()=>ss({...nav,success:null}),3000);
+  }catch(e){ss({...nav,saving:false,error:'Erro ao salvar.'});}
 }
 
 async function toggleOperator(id,active){
@@ -305,18 +306,15 @@ async function toggleOperator(id,active){
 }
 
 async function saveChecklist(data,id){
-  ss({saving:true});
+  const nav={screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab};
+  ss({saving:true,...nav});
   try{
     if(id){
       await sb.from('checklists').update(data).eq('id',id);
     }else{
-      // Cria checklist
       const {data:newCl,error}=await sb.from('checklists').insert(data).select().single();
       if(error)throw error;
-      // Adiciona automaticamente etapa de problema no final (position 999 = sempre última)
-      const {data:step}=await sb.from('checklist_steps')
-        .insert({checklist_id:newCl.id,position:999})
-        .select().single();
+      const {data:step}=await sb.from('checklist_steps').insert({checklist_id:newCl.id,position:999}).select().single();
       await sb.from('step_items').insert([
         {step_id:step.id,type:'check',label:'Detectou algo quebrado ou com problema de funcionamento?',position:1},
         {step_id:step.id,type:'text',label:'Se sim, descreva o problema encontrado:',position:2},
@@ -324,9 +322,9 @@ async function saveChecklist(data,id){
       ]);
     }
     await reload();
-    ss({saving:false,modal:null,screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab,success:id?'Checklist atualizado!':'Checklist criado!',modalData:{}});
-    setTimeout(()=>ss({success:null}),3000);
-  }catch(e){ss({saving:false,error:'Erro ao salvar: '+(e.message||'')});}
+    ss({...nav,saving:false,modal:null,modalData:{},success:id?'Checklist atualizado!':'Checklist criado!'});
+    setTimeout(()=>ss({...nav,success:null}),3000);
+  }catch(e){ss({...nav,saving:false,error:'Erro ao salvar: '+(e.message||'')});}
 }
 
 async function toggleChecklist(id,active){
