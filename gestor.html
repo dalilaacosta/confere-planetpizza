@@ -794,36 +794,62 @@ function renderChecklists(){
 
   const sectors=[...new Set(checklists.map(c=>c.sector||'Geral'))].sort();
 
+  // Single unified table for all sectors
+  const tbl=h('table',{className:'tbl',style:{tableLayout:'fixed',width:'100%'}});
+  tbl.appendChild(h('colgroup',{},
+    h('col',{style:{width:'30%'}}),
+    h('col',{style:{width:'15%'}}),
+    h('col',{style:{width:'10%'}}),
+    h('col',{style:{width:'15%'}}),
+    h('col',{style:{width:'8%'}}),
+    h('col',{style:{width:'22%'}})
+  ));
+  tbl.appendChild(h('thead',{},h('tr',{},
+    h('th',{},'Checklist'),h('th',{},'Horário'),h('th',{},'Frequência'),
+    h('th',{},'Etapas'),h('th',{},'Status'),h('th',{},'Ações')
+  )));
+  const tbody=h('tbody',{});
+
   sectors.forEach(sector=>{
     const sCls=checklists.filter(c=>(c.sector||'Geral')===sector);
-    frag.appendChild(sec(sector.toUpperCase()+' — '+sCls.length+' checklists','+ Novo',()=>ss({modal:'checklist',modalData:{sector,frequency:'Diário',active:true}})));
-    const tbl=h('table',{className:'tbl'});
-    tbl.appendChild(h('thead',{},h('tr',{},h('th',{},'Checklist'),h('th',{},'Horário'),h('th',{},'Frequência'),h('th',{},'Etapas'),h('th',{},'Status'),h('th',{},'Ações'))));
-    const tbody=h('tbody',{});
+    // Sector header row
+    const sRow=h('tr',{},h('td',{colSpan:6,style:{
+      background:'#1A237E',color:'#fff',fontWeight:700,fontSize:11,
+      letterSpacing:'.08em',textTransform:'uppercase',padding:'7px 14px',
+      display:'flex',alignItems:'center',justifyContent:'space-between'
+    }},
+      h('span',{},sector.toUpperCase()+' — '+sCls.length+' checklist'+(sCls.length!==1?'s':'')),
+      h('button',{className:'btn',style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif",letterSpacing:'.04em'},onClick:()=>ss({modal:'checklist',modalData:{sector,frequency:'Diário',active:true}})},'+ Novo')
+    ));
+    tbody.appendChild(sRow);
+
     sCls.forEach(cl=>{
       const totalItems=cl.checklist_steps.reduce((a,s)=>a+s.step_items.length,0);
       const tr=h('tr',{},
-        h('td',{},div({display:'flex',alignItems:'center',gap:8},
-          h('span',{style:{fontSize:18}},cl.icon||'📋'),
-          h('span',{style:{fontWeight:700}},cl.name)
+        h('td',{style:{overflow:'hidden'}},h('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          h('span',{style:{fontSize:16,flexShrink:0}},cl.icon||'📋'),
+          h('span',{style:{fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},cl.name)
         )),
-        h('td',{style:{color:C.t3,fontSize:12}},(cl.start_time||'--')+' – '+(cl.deadline||'--')),
+        h('td',{style:{color:'#555',fontSize:12,whiteSpace:'nowrap'}},(cl.start_time||'--')+' – '+(cl.deadline||'--')),
         h('td',{},h('span',{className:'tag tag-gray'},cl.frequency||'Diário')),
-        h('td',{},cl.checklist_steps.length+' etapas · '+totalItems+' itens'),
+        h('td',{style:{fontSize:12,color:'#555',whiteSpace:'nowrap'}},cl.checklist_steps.length+' etapas · '+totalItems+' itens'),
         h('td',{},h('span',{className:`tag ${cl.active?'tag-green':'tag-red'}`},cl.active?'ATIVO':'INATIVO')),
-        h('td',{},
-          h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
-          h('button',{className:'btn btn-gray btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
-          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir o checklist "'+cl.name+'"? Todos os dados serão perdidos.')){await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
+        h('td',{style:{whiteSpace:'nowrap'}},
+          h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
+          h('button',{className:'btn btn-gray btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
+          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:3},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"?')){await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
         )
       );
       tbody.appendChild(tr);
     });
-    tbl.appendChild(tbody);frag.appendChild(tbl);
-    frag.appendChild(div({height:'16px'}));
   });
 
+  if(checklists.length===0){
+    tbody.appendChild(h('tr',{},h('td',{colSpan:6,style:{textAlign:'center',color:'#999',padding:'32px'}},'Nenhum checklist cadastrado.')));
+  }
+  tbl.appendChild(tbody);
+  frag.appendChild(tbl);
   // Botão adicionar primeiro checklist
   frag.appendChild(div({textAlign:'right',marginBottom:16},
     h('button',{className:'btn btn-primary',onClick:()=>ss({modal:'checklist',modalData:{frequency:'Diário',active:true,sector:'Geral'}})},'+ Novo Checklist')
