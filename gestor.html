@@ -664,16 +664,16 @@ function renderUnits(){
   if(modal==='unit'){
     const md=modalData;const isEdit=!!md.id;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'✏️  Editar Unidade':'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
+    const m=h('div',{className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
+    m.appendChild(h('div',{className:'modal-hdr'},h('span',{},isEdit?'✏️  Editar Unidade':'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=h('div',{className:'modal-body'});
     const g=div({className:'form-group'});
     g.appendChild(h('label',{className:'form-label'},'Nome da Unidade *'));
     const inp=document.createElement('input');inp.type='text';inp.className='form-inp';
     inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
     inp.addEventListener('input',e=>{md.name=e.target.value;});
     g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',style:{padding:'10px 20px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',style:{padding:'10px 24px'},disabled:saving,onClick:async()=>{
         if(!(md.name||'').trim()){ss({error:'Nome é obrigatório.'});return;}
@@ -734,12 +734,12 @@ function renderOperators(){
     const md=modalData;
     const isEdit=!!md.id;
     const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal'});
-    m.appendChild(div({className:'modal-hdr'},
+    const m=h('div',{className:'modal'});
+    m.appendChild(h('div',{className:'modal-hdr'},
       h('span',{},isEdit?'Editar Operador':'Novo Operador'),
       h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
     ));
-    const mb=div({className:'modal-body'});
+    const mb=h('div',{className:'modal-body'});
 
     const fields={};
     function field(label,key,type='text',options=null){
@@ -772,7 +772,7 @@ function renderOperators(){
     ));
 
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
         const data={name:md.name,initials:(md.initials||'').toUpperCase().slice(0,2),role:md.role,pin:md.pin,unit_id:md.unit_id||null,access_level:md.access_level||'operator',active:md.active!==false,company_id:COMPANY_ID};
@@ -833,12 +833,12 @@ function renderChecklists(){
   if(modal==='checklist'){
     const md=modalData;const isEdit=!!md.id;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px',background:'#fff',boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
-    m.appendChild(div({className:'modal-hdr',style:{padding:'16px 20px',display:'flex',alignItems:'center',gap:8}},
+    const m=h('div',{className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px',background:'#fff',boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
+    m.appendChild(h('div',{className:'modal-hdr',style:{padding:'16px 20px',display:'flex',alignItems:'center',gap:8}},
       h('span',{style:{fontSize:15,flex:1}},isEdit?'Editar Checklist':'Novo Checklist'),
       h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
     ));
-    const mb=div({className:'modal-body',style:{padding:'20px'}});
+    const mb=h('div',{className:'modal-body',style:{padding:'20px'}});
 
     function inp(label,key,type='text',ph=''){
       const g=div({className:'form-group'});
@@ -879,7 +879,7 @@ function renderChecklists(){
     mb.appendChild(statusRow);
 
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer',style:{padding:'14px 20px'}},
+    m.appendChild(h('div',{className:'modal-footer',style:{padding:'14px 20px'}},
       h('button',{className:'btn btn-gray',style:{padding:'10px 24px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',style:{padding:'10px 28px'},disabled:saving,onClick:()=>{
         const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:chk.checked,company_id:COMPANY_ID};
@@ -892,12 +892,12 @@ function renderChecklists(){
   if(modal==='steps'){
     const cl=modalData;
     const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'700px'}});
-    m.appendChild(div({className:'modal-hdr'},
+    const m=h('div',{className:'modal',style:{maxWidth:'700px'}});
+    m.appendChild(h('div',{className:'modal-hdr'},
       h('span',{},'Etapas — '+cl.name),
       h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
     ));
-    const mb=div({className:'modal-body'});
+    const mb=h('div',{className:'modal-body'});
 
     // ── QUICK IMPORT ────────────────────────────────────────────────────
     const importBox=div({background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:16});
@@ -1002,7 +1002,7 @@ function renderChecklists(){
     }
 
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Fechar')
     ));
     overlay.appendChild(m);frag.appendChild(overlay);
@@ -1079,9 +1079,9 @@ function renderDocuments(){
     const md=modalData;const isEdit=!!md.id;
     let aiLoading=false;let selectedFile=null;let expiryInp=null;
     const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal'});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
+    const m=h('div',{className:'modal'});
+    m.appendChild(h('div',{className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=h('div',{className:'modal-body'});
 
     // ── AI Upload Section ──────────────────────────────────────────────
     const aiSection=div({background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:16});
@@ -1172,7 +1172,7 @@ function renderDocuments(){
     if(md.file_url){mb.appendChild(div({fontSize:12,color:'#1565C0',marginTop:4},h('a',{href:md.file_url,target:'_blank',style:{color:'#1565C0'}},'📎 Ver documento anexado')));}
 
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
         if(!md.name||!md.expiry_date){ss({error:'Nome e data de vencimento são obrigatórios.'});return;}
@@ -1363,15 +1363,15 @@ function renderUnitSelect(){
   if(modal==='unit'){
     const md=modalData;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
+    const m=h('div',{className:'modal',style:{maxWidth:'440px',background:'#fff',borderRadius:'4px'}});
+    m.appendChild(h('div',{className:'modal-hdr'},h('span',{},'➕  Nova Unidade'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=h('div',{className:'modal-body'});
     const g=div({className:'form-group'});
     g.appendChild(h('label',{className:'form-label'},'Nome da Unidade *'));
     const inp=document.createElement('input');inp.type='text';inp.className='form-inp';inp.placeholder='Ex: Planet Shopping ABC';inp.value=md.name||'';
     inp.addEventListener('input',e=>{md.name=e.target.value;});
     g.appendChild(inp);mb.appendChild(g);m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',style:{padding:'10px 20px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',style:{padding:'10px 24px'},disabled:saving,onClick:async()=>{
         if(!(md.name||'').trim())return;
@@ -1433,9 +1433,9 @@ function renderDocuments(){
     const md=modalData;const isEdit=!!md.id;
     let expiryInp=null,selectedFile=null;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'580px',background:'#fff',borderRadius:'4px',maxHeight:'90vh',overflowY:'auto'}});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
+    const m=h('div',{className:'modal',style:{maxWidth:'580px',background:'#fff',borderRadius:'4px',maxHeight:'90vh',overflowY:'auto'}});
+    m.appendChild(h('div',{className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
+    const mb=h('div',{className:'modal-body'});
     // AI upload section
     const aiSection=div({background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:16});
     aiSection.appendChild(div({fontSize:11,fontWeight:700,color:'#1565C0',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:6},'📎  Anexar e analisar com IA'));
@@ -1491,7 +1491,7 @@ function renderDocuments(){
     gNotes.appendChild(taNotes);mb.appendChild(gNotes);
     if(md.file_url)mb.appendChild(div({fontSize:12,color:'#1565C0',marginTop:8},h('a',{href:md.file_url,target:'_blank',style:{color:'#1565C0'}},'📎 Ver documento anexado')));
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
+    m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
         if(!md.name||!md.expiry_date){ss({error:'Nome e data são obrigatórios.'});return;}
