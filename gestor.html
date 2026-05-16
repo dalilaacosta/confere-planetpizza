@@ -732,7 +732,7 @@ function renderChecklists(){
   if(modal==='checklist'){
     const md=modalData;const isEdit=!!md.id;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px'}});
+    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px',background:'#fff'}});
     m.appendChild(div({className:'modal-hdr',style:{padding:'16px 20px',display:'flex',alignItems:'center',gap:8}},
       h('span',{style:{fontSize:15,flex:1}},isEdit?'Editar Checklist':'Novo Checklist'),
       h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
