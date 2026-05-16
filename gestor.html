@@ -264,6 +264,10 @@ async function loadExecs(){
 }
 
 async function reload(){
+  // Preserve current navigation state
+  const currentScreen=state.screen;
+  const currentUnit=state.selectedUnit;
+  const currentTab=state.tab;
   const [opsR,clsR,unitsR,issR,docsR]=await Promise.all([
     sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
     sb.from('checklists').select('*, checklist_steps(id,position,step_items(id,type,label,position))').eq('company_id',COMPANY_ID).order('sector'),
@@ -274,7 +278,13 @@ async function reload(){
   const cls=clsR.data||[];
   cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
   const execs=await loadExecs();
-  ss({operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issR.data||[],documents:docsR.data||[]});
+  ss({
+    screen:currentScreen,
+    selectedUnit:currentUnit,
+    tab:currentTab,
+    operators:opsR.data||[],checklists:cls,units:unitsR.data||[],
+    executions:execs,issues:issR.data||[],documents:docsR.data||[]
+  });
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────
@@ -284,7 +294,7 @@ async function saveOperator(data,id){
     if(id){await sb.from('operators').update(data).eq('id',id);}
     else{await sb.from('operators').insert(data);}
     await reload();
-    ss({saving:false,modal:null,success:id?'Operador atualizado!':'Operador cadastrado!',modalData:{}});
+    ss({saving:false,modal:null,screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab,success:id?'Operador atualizado!':'Operador cadastrado!',modalData:{}});
     setTimeout(()=>ss({success:null}),3000);
   }catch(e){ss({saving:false,error:'Erro ao salvar.'});}
 }
@@ -314,7 +324,7 @@ async function saveChecklist(data,id){
       ]);
     }
     await reload();
-    ss({saving:false,modal:null,success:id?'Checklist atualizado!':'Checklist criado! Etapa de problema adicionada automaticamente.',modalData:{}});
+    ss({saving:false,modal:null,screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab,success:id?'Checklist atualizado!':'Checklist criado!',modalData:{}});
     setTimeout(()=>ss({success:null}),3000);
   }catch(e){ss({saving:false,error:'Erro ao salvar: '+(e.message||'')});}
 }
@@ -645,10 +655,10 @@ function renderUnits(){
         }},isActive?'Desativar':'Ativar'),
         h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
           if(opCount>0){alert('Não é possível excluir: unidade tem operadores. Transfira-os primeiro.');return;}
-          if(confirm('Excluir "'+u.name+'"? Esta ação não pode ser desfeita.')){
+          confirmAction('Excluir "'+u.name+'"?',async()=>{
             await sb.from('units').delete().eq('id',u.id);
             await reload();ss({success:'Unidade excluída!'});setTimeout(()=>ss({success:null}),3000);
-          }
+          })
         }},'Excluir')
       )
     ));
@@ -721,7 +731,7 @@ function renderOperators(){
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'operator',modalData:{...op}})},'Editar'),
         h('button',{className:`btn btn-sm ${op.active?'btn-danger':'btn-success'}`,style:{marginRight:4},onClick:()=>toggleOperator(op.id,!op.active)},op.active?'Desativar':'Ativar'),
-        h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir operador "'+op.name+'"? Esta ação não pode ser desfeita.')){await sb.from('operators').delete().eq('id',op.id);await reload();ss({success:'Operador excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
+        h('button',{className:'btn btn-danger btn-sm',onClick:()=>confirmAction('Excluir o operador "'+op.name+'"?',async()=>{await sb.from('operators').delete().eq('id',op.id);await reload();ss({success:'Operador excluído!'});setTimeout(()=>ss({success:null}),3000);})},'Excluir')
       )
     );
     tbody.appendChild(tr);
@@ -837,7 +847,7 @@ function renderChecklists(){
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
           h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:3},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"?')){await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"? Esta ação não pode ser desfeita.')){try{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}catch(e){ss({error:'Erro ao excluir: '+(e.message||'')});setTimeout(()=>ss({error:null}),4000);}}}},'Excluir')
         )
       );
       tbody.appendChild(tr);
@@ -1008,7 +1018,7 @@ function renderChecklists(){
         const sc=div({className:'step-card'});
         sc.appendChild(div({display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8},
           h('span',{style:{fontSize:12,fontWeight:700,color:C.navy,letterSpacing:'.06em',textTransform:'uppercase'}},'Etapa '+(si+1)+' · '+step.step_items.length+' item(s)'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover etapa '+(si+1)+' e seus itens?'))await deleteStep(step.id);}},'Remover')
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{confirmAction('Remover etapa '+(si+1)+' e seus itens?',()=>deleteStep(step.id));}},'Remover')
         ));
         step.step_items.forEach(item=>{
           const ir=div({className:'item-row-edit'});
@@ -1019,7 +1029,7 @@ function renderChecklists(){
           const labelInp=document.createElement('input');labelInp.type='text';labelInp.className='form-inp';labelInp.value=item.label;labelInp.style.fontSize='13px';
           ir.appendChild(typeSelect);ir.appendChild(labelInp);
           ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{await saveItem(step.id,typeSelect.value,labelInp.value,item.position,item.id);}},'💾'));
-          ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover item?'))await deleteItem(item.id);}},'×'));
+          ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{confirmAction('Remover este item?',()=>deleteItem(item.id));}},'×'));
           sc.appendChild(ir);
         });
         mb.appendChild(sc);
@@ -1448,7 +1458,7 @@ function renderDocuments(){
           await reload();
         }},doc.status==='archived'?'Reativar':'Arquivar'),
         h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
-          if(confirm('Excluir este documento?')){await sb.from('documents').delete().eq('id',doc.id);await reload();}
+          confirmAction('Excluir este documento?',async()=>{await sb.from('documents').delete().eq('id',doc.id);await reload();})
         }},'Excluir')
       )
     ));
@@ -1635,6 +1645,28 @@ function renderDashboard(){
   else if(tab==='settings'){try{content.appendChild(renderSettings());}catch(e){content.appendChild(h('div',{style:{padding:'20px',color:'#C62828'}},e.message));}}
   root.appendChild(content);
   return root;
+}
+
+
+// ── CUSTOM CONFIRM ────────────────────────────────────────────────────────
+function confirmAction(msg,onYes){
+  const overlay=document.createElement('div');
+  Object.assign(overlay.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:'999',fontFamily:"'Roboto',sans-serif"});
+  const box=document.createElement('div');
+  Object.assign(box.style,{background:'#fff',padding:'24px',maxWidth:'380px',width:'90%',boxShadow:'0 8px 32px rgba(0,0,0,.2)'});
+  const msgEl=document.createElement('p');
+  msgEl.textContent=msg;Object.assign(msgEl.style,{fontSize:'14px',color:'#1A1A1A',marginBottom:'20px',lineHeight:'1.5'});
+  const btns=document.createElement('div');
+  Object.assign(btns.style,{display:'flex',gap:'8px',justifyContent:'flex-end'});
+  const cancelBtn=document.createElement('button');
+  cancelBtn.textContent='Cancelar';Object.assign(cancelBtn.style,{padding:'8px 18px',background:'#9E9E9E',color:'#fff',border:'none',cursor:'pointer',fontWeight:'700',fontFamily:"'Roboto',sans-serif"});
+  cancelBtn.onclick=()=>document.body.removeChild(overlay);
+  const okBtn=document.createElement('button');
+  okBtn.textContent='Confirmar';Object.assign(okBtn.style,{padding:'8px 18px',background:'#C62828',color:'#fff',border:'none',cursor:'pointer',fontWeight:'700',fontFamily:"'Roboto',sans-serif"});
+  okBtn.onclick=()=>{document.body.removeChild(overlay);onYes();};
+  btns.appendChild(cancelBtn);btns.appendChild(okBtn);
+  box.appendChild(msgEl);box.appendChild(btns);overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
 
 
