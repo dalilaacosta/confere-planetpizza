@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="theme-color" content="#0D7390"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-title" content="Confere"/>
-<title>Confere — Planet Pizza</title>
+<meta name="apple-mobile-web-app-title" content="ConfereOps"/>
+<title>ConfereOps</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -275,7 +275,7 @@ function bottomNav(){
 
 function renderLoading(){
   const scr=div({display:'flex',flexDirection:'column',flex:1});
-  scr.appendChild(topBar('☑','Confere — Planet Pizza'));
+  scr.appendChild(topBar('☑','ConfereOps'));
   scr.appendChild(div({flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16},h('div',{className:'spinner'}),div({fontSize:13,color:C.t3,fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')));
   return scr;
 }
@@ -283,7 +283,7 @@ function renderLoading(){
 function renderLogin(){
   const {error}=state;
   const scr=div({display:'flex',flexDirection:'column',flex:1});
-  scr.appendChild(topBar('☑','Confere — Acesso do Operador'));
+  scr.appendChild(topBar('☑','ConfereOps — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
   const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
@@ -376,7 +376,7 @@ function renderChecklistsTab(){
   const doneCount=doneIds.size,total=checklists.length,allDone=total>0&&doneCount===total;
   const wrap=div({display:'flex',flexDirection:'column',flex:1,overflow:'hidden'});
   const exitBtn=h('button',{className:'btn',onClick:()=>ss({employee:null,selEmp:null,screen:'login',lastDone:null,profileData:null}),style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:11,fontWeight:700,padding:'4px 10px',cursor:'pointer',letterSpacing:'.05em',fontFamily:"'Roboto',sans-serif"}},'SAIR');
-  wrap.appendChild(topBar('☑','Confere',exitBtn));
+  wrap.appendChild(topBar('☑','ConfereOps',exitBtn));
   const ib=div({background:C.navy,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0});
   ib.appendChild(div({},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},'OPERADOR'),div({fontSize:13,color:'#fff',fontWeight:700,marginTop:2},employee.name.toUpperCase())));
   ib.appendChild(div({textAlign:'right'},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},dateStr),div({fontSize:13,color:allDone?'#A5D6A7':'#FFD54F',fontWeight:700,marginTop:2},doneCount+'/'+total+' FEITOS')));
