@@ -731,15 +731,18 @@ function renderChecklists(){
   // Modal checklist (info básica)
   if(modal==='checklist'){
     const md=modalData;const isEdit=!!md.id;
-    const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=div({className:'modal'});
-    m.appendChild(div({className:'modal-hdr'},h('span',{},isEdit?'Editar Checklist':'Novo Checklist'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
-    const mb=div({className:'modal-body'});
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=div({className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',borderRadius:'4px'}});
+    m.appendChild(div({className:'modal-hdr',style:{padding:'16px 20px',display:'flex',alignItems:'center',gap:8}},
+      h('span',{style:{fontSize:15,flex:1}},isEdit?'Editar Checklist':'Novo Checklist'),
+      h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
+    ));
+    const mb=div({className:'modal-body',style:{padding:'20px'}});
 
-    function inp(label,key,type='text'){
+    function inp(label,key,type='text',ph=''){
       const g=div({className:'form-group'});
       g.appendChild(h('label',{className:'form-label'},label));
-      const el=document.createElement('input');el.type=type;el.className='form-inp';el.value=md[key]||'';
+      const el=document.createElement('input');el.type=type;el.className='form-inp';el.value=md[key]||'';if(ph)el.placeholder=ph;
       el.addEventListener('input',e=>{md[key]=e.target.value;});
       g.appendChild(el);return g;
     }
@@ -752,24 +755,38 @@ function renderChecklists(){
       g.appendChild(el);return g;
     }
 
-    mb.appendChild(div({className:'form-row'},inp('Nome do Checklist','name'),inp('Ícone (emoji)','icon')));
-    mb.appendChild(div({className:'form-row'},
-      sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha']]),
-      sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']])
-    ));
-    mb.appendChild(div({className:'form-row'},inp('Horário início','start_time','time'),inp('Prazo','deadline','time')));
+    mb.appendChild(inp('Nome do Checklist *','name','text','Ex: Limpeza de Abertura'));
+    mb.appendChild(div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px'}),
+    );
+    const row1=div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px'});
+    row1.appendChild(inp('Ícone','icon','text','📋'));
+    row1.appendChild(sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha'],['Salão','Salão'],['Estoque','Estoque']]));
+    row1.appendChild(sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']]));
+    mb.appendChild(row1);
+
+    const row2=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'});
+    row2.appendChild(inp('Horário de início','start_time','time'));
+    row2.appendChild(inp('Prazo','deadline','time'));
+    mb.appendChild(row2);
+
+    const statusRow=div({display:'flex',alignItems:'center',gap:10,marginTop:14,padding:'10px 14px',background:'#F5F5F5',border:'1px solid #D0D0D0'});
+    const chk=document.createElement('input');chk.type='checkbox';chk.id='cl-active';chk.checked=md.active!==false;
+    Object.assign(chk.style,{width:'16px',height:'16px',cursor:'pointer'});
+    statusRow.appendChild(chk);
+    statusRow.appendChild(h('label',{for:'cl-active',style:{fontSize:13,fontWeight:700,color:'#1A1A1A',cursor:'pointer'}},'Checklist ativo'));
+    statusRow.appendChild(h('span',{style:{fontSize:12,color:'#777'}},'— visível para operadores'));
+    mb.appendChild(statusRow);
 
     m.appendChild(mb);
-    m.appendChild(div({className:'modal-footer'},
-      h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
-      h('button',{className:'btn btn-primary',disabled:saving,onClick:()=>{
-        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:md.active!==false,company_id:COMPANY_ID};
+    m.appendChild(div({className:'modal-footer',style:{padding:'14px 20px'}},
+      h('button',{className:'btn btn-gray',style:{padding:'10px 24px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
+      h('button',{className:'btn btn-primary',style:{padding:'10px 28px'},disabled:saving,onClick:()=>{
+        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:chk.checked,company_id:COMPANY_ID};
         saveChecklist(data,md.id);
-      }},saving?'Salvando...':'Salvar')
+      }},saving?'Salvando...':'💾  Salvar')
     ));
     overlay.appendChild(m);frag.appendChild(overlay);
   }
-
   // Modal etapas e itens
   if(modal==='steps'){
     const cl=modalData;
