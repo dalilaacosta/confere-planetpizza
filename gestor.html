@@ -1314,7 +1314,7 @@ function renderDashboard(){
 
   // Nav
   const nav=h('div',{className:'nav'});
-  [['overview','🏠  Visão Geral'],['units','🏪  Unidades'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['documents','📄  Documentação'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
+  [['overview','🏠  Visão Geral'],['operators','👤  Operadores'],['checklists','✅  Checklists'],['documents','📄  Documentação'],['settings','⚙️  Configurações']].forEach(([id,label])=>{
     nav.appendChild(h('button',{className:`nav-tab${tab===id?' active':''}`,onClick:()=>ss({tab:id,modal:null,error:null,success:null})},label));
   });
   root.appendChild(nav);
