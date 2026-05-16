@@ -24,7 +24,6 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;display:flex;justify-con
 @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes flamePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 @keyframes barFill{from{width:0}}
-
 .top-bar{background:#0D7390;height:46px;display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
 .top-bar-icon{width:28px;height:28px;background:rgba(255,255,255,.2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px}
 .top-bar-title{color:#fff;font-size:14px;font-weight:700;letter-spacing:.02em;flex:1}
@@ -32,23 +31,17 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;display:flex;justify-con
 .sec span{color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .prog-track{height:6px;background:#D0D0D0;overflow:hidden;flex-shrink:0}
 .prog-fill{height:100%;background:#0D7390;transition:width .4s ease}
-
-/* Bottom nav */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#1A237E;display:flex;border-top:2px solid #0D7390;z-index:50;flex-shrink:0}
 .bnav-tab{flex:1;background:transparent;border:none;color:rgba(255,255,255,.55);font-size:10px;font-weight:700;padding:8px 6px 10px;cursor:pointer;font-family:'Roboto',sans-serif;text-transform:uppercase;letter-spacing:.05em;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s}
 .bnav-tab.active{color:#fff;border-top:2px solid #FFD54F;margin-top:-2px}
 .bnav-icon{font-size:20px;line-height:1}
 .pb{padding-bottom:68px}
-
-/* Buttons */
 .btn{border:none;cursor:pointer;font-family:'Roboto',sans-serif;font-weight:700;transition:all .12s;outline:none;text-transform:uppercase;letter-spacing:.04em}
 .btn:active{filter:brightness(.9)}
 .btn-blue{background:#1565C0;color:#fff;padding:14px;font-size:13px;flex:1}
 .btn-green{background:#2E7D32;color:#fff;padding:14px;font-size:13px;flex:1}
 .btn-gray{background:#9E9E9E;color:#fff;padding:14px;font-size:13px;flex:1}
 .btn-row{display:flex;gap:2px;flex-shrink:0}
-
-/* Inputs */
 .inp{background:#fff;border:2px solid #B0B0B0;color:#1A1A1A;font-family:'Roboto',sans-serif;font-size:13px;outline:none;width:100%;padding:10px 12px;transition:border .15s}
 .inp:focus{border-color:#1565C0}
 textarea.inp{resize:none;line-height:1.5}
@@ -58,21 +51,12 @@ input[type=number].inp::-webkit-inner-spin-button{-webkit-appearance:none}
 .search-inp:focus{border-color:#1565C0}
 .search-wrap{position:relative}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#999;font-size:16px;pointer-events:none}
-.pin-dot{width:14px;height:14px;border-radius:50%;transition:all .15s}
-
-/* Modals */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:200}
 .modal{background:#fff;width:100%;max-width:430px;animation:slideUp .25s ease}
 .modal-hdr{background:#1A237E;padding:12px 16px}
 .modal-hdr span{color:#fff;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-
-/* Misc */
 .spinner{width:36px;height:36px;border:4px solid #DDD;border-top-color:#0D7390;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
 .err-bar{background:#FFEBEE;border-left:4px solid #C62828;padding:10px 14px;font-size:12px;color:#C62828;font-weight:700}
-
-/* Profile / Gamification */
-.profile-sec{background:#1A237E;padding:7px 14px;flex-shrink:0}
-.profile-sec span{color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .pcard{background:#fff;border:1px solid #D0D0D0;margin:0 0 10px;padding:16px}
 .streak-num{font-size:44px;font-weight:900;color:#1A1A1A;line-height:1;display:inline-block;animation:countUp .4s ease}
 .flame{display:inline-block;animation:flamePulse 1.4s ease-in-out infinite;font-size:32px;vertical-align:middle;margin-left:6px}
@@ -86,6 +70,7 @@ input[type=number].inp::-webkit-inner-spin-button{-webkit-appearance:none}
 .rtab{flex:1;background:#fff;border:none;font-size:11px;font-weight:700;padding:7px;cursor:pointer;font-family:'Roboto',sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#777}
 .rtab.active{background:#1A237E;color:#fff}
 .lv-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px}
+.pin-box{width:60px;height:72px;border:2px solid #D0D0D0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;border-radius:4px;transition:all .15s}
 </style>
 </head>
 <body>
@@ -95,7 +80,6 @@ const {createClient}=supabase;
 const sb=createClient('https://fmuolonucniwaosseijh.supabase.co','sb_publishable_Ib7zu9sSJmpCIi3Q8j2E2w_6FCR2VVE');
 const C={teal:"#0D7390",navy:"#1A237E",blue:"#1565C0",green:"#2E7D32",amber:"#F9A825",red:"#C62828",bg:"#F2F2F2",white:"#fff",bd:"#D0D0D0",tx:"#1A1A1A",t2:"#444",t3:"#777",t4:"#AEAEB2"};
 const ST_CFG={urgente:{label:"URGENTE",c:"#fff",bg:C.red},pendente:{label:"PENDENTE",c:"#1A1A1A",bg:C.amber},agendado:{label:"AGENDADO",c:"#fff",bg:"#546E7A"}};
-
 const BADGE_DEFS=[
   {id:'seq7',name:'Pontual',desc:'7 dias seguidos',emoji:'⏰',color:'#B5D4F4',text:'#0C447C',check:d=>d.streak>=7},
   {id:'seq10',name:'Sequência 10',desc:'10 dias seguidos',emoji:'🔥',color:'#FAC775',text:'#633806',check:d=>d.streak>=10},
@@ -104,7 +88,6 @@ const BADGE_DEFS=[
   {id:'inspetor',name:'Inspetor',desc:'50 checklists feitos',emoji:'👁️',color:'#F4C0D1',text:'#72243E',check:d=>d.totalDone>=50},
   {id:'mestre',name:'Mestre',desc:'3 meses impecável',emoji:'🏆',color:'#FAC775',text:'#633806',check:d=>d.streak>=90},
 ];
-
 const LEVELS=[
   {min:0,level:1,name:'Iniciante',color:'#D3D1C7',text:'#444'},
   {min:200,level:2,name:'Aprendiz',color:'#C0DD97',text:'#27500A'},
@@ -112,16 +95,11 @@ const LEVELS=[
   {min:2000,level:4,name:'Especialista',color:'#CECBF6',text:'#3C3489'},
   {min:5000,level:5,name:'Líder',color:'#FAC775',text:'#633806'},
 ];
-
-function getLevel(score){
-  let lv=LEVELS[0];
-  LEVELS.forEach(l=>{if(score>=l.min)lv=l;});
-  return lv;
-}
+function getLevel(score){let lv=LEVELS[0];LEVELS.forEach(l=>{if(score>=l.min)lv=l;});return lv;}
 
 let state={
   screen:'loading',operators:[],checklists:[],executions:[],
-  employee:null,selEmp:null,pin:'',pinErr:false,
+  employee:null,selEmp:null,
   activeTab:'checklists',
   profileData:null,profileLoading:false,profileRankTab:'week',
   activeList:null,executionId:null,
@@ -159,13 +137,8 @@ function subscribeRealtime(){
 async function loadProfileData(empId){
   ss({profileLoading:true,profileData:null});
   try{
-    // Stats from view
     const {data:stats}=await sb.from('operator_stats').select('*').eq('operator_id',empId).single();
-    
-    // All done executions for streak calc
     const {data:execs}=await sb.from('executions').select('started_at').eq('operator_id',empId).eq('status','done').order('started_at',{ascending:false});
-    
-    // Streak calculation
     const dates=[...new Set((execs||[]).map(e=>e.started_at.split('T')[0]))].sort((a,b)=>b.localeCompare(a));
     let streak=0;
     const today=new Date();today.setHours(0,0,0,0);
@@ -175,44 +148,15 @@ async function loadProfileData(empId){
       const diff=Math.round((check-d)/(1000*60*60*24));
       if(diff<=1){streak++;check=d;}else break;
     }
-
-    // Week days (last 7)
     const weekDays=[];
-    for(let i=6;i>=0;i--){
-      const d=new Date();d.setDate(d.getDate()-i);
-      weekDays.push(dates.includes(d.toISOString().split('T')[0]));
-    }
-
-    // All operators ranking
+    for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);weekDays.push(dates.includes(d.toISOString().split('T')[0]));}
     const {data:ranking}=await sb.from('operator_stats').select('operator_id,name,initials,week_score,month_score').order('week_score',{ascending:false});
-
-    // Week done count (for "Perfeito" badge)
     const weekStart=new Date();weekStart.setDate(weekStart.getDate()-weekStart.getDay());weekStart.setHours(0,0,0,0);
     const {data:weekExecs}=await sb.from('executions').select('started_at').eq('operator_id',empId).eq('status','done').gte('started_at',weekStart.toISOString());
     const weekDone=new Set((weekExecs||[]).map(e=>e.started_at.split('T')[0])).size;
-
-    ss({profileLoading:false,profileData:{
-      streak,weekDays,weekDone,
-      weekScore:Number(stats?.week_score||0),
-      monthScore:Number(stats?.month_score||0),
-      totalDone:Number(stats?.total_done||0),
-      totalScore:Number(stats?.total_score||0),
-      ranking:ranking||[],
-    }});
+    ss({profileLoading:false,profileData:{streak,weekDays,weekDone,weekScore:Number(stats?.week_score||0),monthScore:Number(stats?.month_score||0),totalDone:Number(stats?.total_done||0),totalScore:Number(stats?.total_score||0),ranking:ranking||[]}});
   }catch(e){ss({profileLoading:false});}
 }
-
-// PIN login
-function enterPin(d){
-  if(state.pin.length>=4)return;
-  const np=state.pin+d;ss({pin:np});
-  if(np.length===4){setTimeout(async()=>{
-    const op=state.operators.find(o=>o.pin===np&&o.id===state.selEmp?.id);
-    if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists'});}
-    else{ss({shake:true,pinErr:true});setTimeout(()=>ss({pin:'',shake:false,pinErr:false}),800);}
-  },180);}
-}
-function delPin(){ss({pin:state.pin.slice(0,-1)});}
 
 async function startList(cl){
   try{
@@ -231,30 +175,20 @@ async function abandonList(){
   ss({screen:'home',activeList:null,executionId:null,stepIdx:0,sVals:{},sPhotos:{},sChecks:{}});
 }
 
-function isProblemStep(step){
-  return step.step_items.some(i=>i.label.includes('Detectou algo quebrado'));
-}
-function problemChecked(step){
-  const checkItem=step.step_items.find(i=>i.label.includes('Detectou'));
-  return checkItem?state.sChecks[checkItem.id]:undefined;
-}
+function isProblemStep(step){return step.step_items.some(i=>i.label.includes('Detectou algo quebrado'));}
+function problemChecked(step){const ci=step.step_items.find(i=>i.label.includes('Detectou'));return ci?state.sChecks[ci.id]:undefined;}
+
 function canNext(){
   const step=state.activeList.checklist_steps[state.stepIdx];
   const isProb=isProblemStep(step);
-  const probAnswer=isProb?problemChecked(step):undefined;
-
+  const probAns=isProb?problemChecked(step):undefined;
   return step.step_items.every(item=>{
     if(isProb){
-      // Etapa de problema: lógica condicional
-      if(item.label.includes('Detectou'))return probAnswer!==undefined; // precisa responder
-      if(item.label.includes('descreva')){
-        if(probAnswer===true)return(state.sVals[item.id]||'').trim().length>0; // obrigatório se sim
-        return true; // não precisa se não
-      }
-      if(item.label.includes('opcional'))return true; // foto sempre opcional
+      if(item.label.includes('Detectou'))return probAns!==undefined;
+      if(item.label.includes('descreva')){return probAns===true?(state.sVals[item.id]||'').trim().length>0:true;}
+      if(item.label.includes('opcional'))return true;
       return true;
     }
-    // Itens normais
     if(item.type==='check')return state.sChecks[item.id]!==undefined;
     if(item.type==='photo'){const isOpt=item.label.toLowerCase().includes('opcional');return!!state.sPhotos[item.id]||isOpt;}
     if(item.type==='number')return(state.sVals[item.id]||'').trim().length>0;
@@ -271,23 +205,14 @@ async function nextStep(){
       photo_url:item.type==='photo'&&state.sPhotos[item.id]!=='skip'?(state.sPhotos[item.id]||null):null,
     }));
     await sb.from('item_responses').insert(responses);
-    
-    // Se detectou problema, salvar na tabela issues
     const problemCheck=step.step_items.find(i=>i.label.includes('Detectou'));
     const descItem=step.step_items.find(i=>i.label.includes('descreva'));
-    const photoItem=step.step_items.find(i=>i.label.includes('Foto do problema'));
+    const photoItem=step.step_items.find(i=>i.label.includes('opcional'));
     if(problemCheck&&state.sChecks[problemCheck.id]===true){
       const desc=descItem?state.sVals[descItem.id]||'':'';
       const photoUrl=photoItem&&state.sPhotos[photoItem.id]!=='skip'?state.sPhotos[photoItem.id]||null:null;
       if(desc||photoUrl){
-        await sb.from('issues').insert({
-          execution_id:state.executionId,
-          checklist_id:state.activeList.id,
-          operator_id:state.employee.id,
-          description:desc||'Problema reportado sem descrição',
-          photo_url:photoUrl,
-          status:'open',
-        });
+        await sb.from('issues').insert({execution_id:state.executionId,checklist_id:state.activeList.id,operator_id:state.employee.id,description:desc||'Problema reportado',photo_url:photoUrl,status:'open'});
       }
     }
   }catch(e){ss({error:'Erro ao salvar.'});return;}
@@ -319,7 +244,7 @@ async function handlePhoto(e){
     if(error)throw error;
     const {data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);
     ss({sPhotos:{...state.sPhotos,[id]:publicUrl}});
-  }catch(e){const r=new FileReader();r.onload=ev=>ss({sPhotos:{...state.sPhotos,[id]:ev.target.result}});r.readAsDataURL(f);}
+  }catch(err){const r=new FileReader();r.onload=ev=>ss({sPhotos:{...state.sPhotos,[id]:ev.target.result}});r.readAsDataURL(f);}
 }
 
 function h(tag,attrs,...ch){
@@ -339,26 +264,28 @@ const topBar=(icon,title,extra)=>{const b=h('div',{className:'top-bar'});b.appen
 
 function bottomNav(){
   const nav=h('div',{className:'bottom-nav'});
-  const tabs=[['checklists','📋','Checklists'],['profile','🏆','Meu Perfil']];
-  tabs.forEach(([id,icon,label])=>{
-    const t=h('button',{className:`bnav-tab${state.activeTab===id?' active':''}`,onClick:()=>{
-      if(id==='profile'&&!state.profileData&&!state.profileLoading){loadProfileData(state.employee.id);}
+  [['checklists','📋','Checklists'],['profile','🏆','Meu Perfil']].forEach(([id,icon,label])=>{
+    nav.appendChild(h('button',{className:`bnav-tab${state.activeTab===id?' active':''}`,onClick:()=>{
+      if(id==='profile'&&!state.profileData&&!state.profileLoading)loadProfileData(state.employee.id);
       ss({activeTab:id});
-    }},h('span',{className:'bnav-icon'},icon),label);
-    nav.appendChild(t);
+    }},h('span',{className:'bnav-icon'},icon),label));
   });
   return nav;
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────
+function renderLoading(){
+  const scr=div({display:'flex',flexDirection:'column',flex:1});
+  scr.appendChild(topBar('☑','Confere — Planet Pizza'));
+  scr.appendChild(div({flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16},h('div',{className:'spinner'}),div({fontSize:13,color:C.t3,fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')));
+  return scr;
+}
+
 function renderLogin(){
   const {error}=state;
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('☑','Confere — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
-
-  // Seção busca
   const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
   const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
   const swrap=div({className:'search-wrap'});
@@ -366,8 +293,6 @@ function renderLogin(){
   const sinp=document.createElement('input');sinp.type='text';sinp.className='search-inp';sinp.placeholder='Buscar pelo nome...';
   swrap.appendChild(sinp);sw.appendChild(swrap);
   const empList=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
-
-  // Seção PIN (oculta inicialmente)
   const selSec=h('div',{className:'sec'},h('span',{},'Operador Identificado'));selSec.style.display='none';
   const selCard=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',display:'none'});
   const pinSec=h('div',{className:'sec'},h('span',{},'PIN de Acesso'));pinSec.style.display='none';
@@ -375,12 +300,18 @@ function renderLogin(){
   pb.appendChild(div({fontSize:13,color:C.t3,textAlign:'center',marginBottom:16,letterSpacing:'.04em'},'Digite seu PIN de 4 dígitos'));
   const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:12,marginBottom:8,cursor:'text'});
   const boxes=[];
-  for(let i=0;i<4;i++){const box=div({style:{width:'60px',height:'72px',border:`2px solid ${C.bd}`,background:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',fontWeight:'700',transition:'all .15s',borderRadius:'4px'}});box.className='pin-box';boxes.push(box);pinWrap.appendChild(box);}
+  for(let i=0;i<4;i++){const box=h('div',{className:'pin-box'});boxes.push(box);pinWrap.appendChild(box);}
   const errMsg=div({textAlign:'center',color:C.red,fontSize:13,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO — TENTE NOVAMENTE');
   const nativeInp=document.createElement('input');
   nativeInp.type='tel';nativeInp.inputMode='numeric';nativeInp.maxLength=4;nativeInp.autocomplete='off';
   Object.assign(nativeInp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
-  function updateBoxes(val,isErr){boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});}
+  function updateBoxes(val,isErr){
+    boxes.forEach((b,i)=>{
+      b.textContent=i<val.length?'●':'';
+      b.style.borderColor=isErr?C.red:(i<=val.length&&val.length>0?C.blue:C.bd);
+      b.style.background=isErr?'#FFEBEE':(i<val.length?'#E3F2FD':C.white);
+    });
+  }
   nativeInp.addEventListener('input',e=>{
     const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);
     e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
@@ -392,12 +323,10 @@ function renderLogin(){
     }
   });
   pinWrap.appendChild(nativeInp);
-  // iOS fix: touchstart garante abertura do teclado dentro do gesto
   pinWrap.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
   pinWrap.addEventListener('click',()=>nativeInp.focus());
   pb.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
   pb.appendChild(pinWrap);pb.appendChild(errMsg);
-
   function showPin(emp){
     state.selEmp=emp;
     selCard.innerHTML='';
@@ -415,10 +344,8 @@ function renderLogin(){
     opSec.style.display='none';sw.style.display='none';empList.style.display='none';
     selSec.style.display='';selCard.style.display='';pinSec.style.display='';pb.style.display='';
     nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';
-    // iOS trick: duplo rAF garante foco após DOM estabilizar
     requestAnimationFrame(()=>requestAnimationFrame(()=>nativeInp.focus()));
   }
-
   function renderList(q){
     empList.innerHTML='';
     const f=state.operators.filter(o=>o.name.toLowerCase().includes((q||'').toLowerCase()));
@@ -439,15 +366,14 @@ function renderLogin(){
   body.appendChild(pinSec);body.appendChild(pb);
   scr.appendChild(body);return scr;
 }
-// ── HOME / CHECKLISTS TAB ─────────────────────────────────────────────────
-function renderChecklists(){
+
+function renderChecklistsTab(){
   const {employee,lastDone,confirmRedo,executions,checklists,error}=state;
   const dateStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).toUpperCase();
   const doneIds=new Set(executions.filter(e=>e.status==='done').map(e=>e.checklist_id));
   const inProgressMap={};executions.filter(e=>e.status==='in_progress').forEach(e=>{inProgressMap[e.checklist_id]={empId:e.operator_id,empName:e.operators?.name?.split(' ')[0]||'Alguém'};});
   const completedByMap={};executions.filter(e=>e.status==='done').forEach(e=>{const t=new Date(e.finished_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});completedByMap[e.checklist_id]={empName:e.operators?.name?.split(' ')[0]||'',time:t};});
   const doneCount=doneIds.size,total=checklists.length,allDone=total>0&&doneCount===total;
-
   const wrap=div({display:'flex',flexDirection:'column',flex:1,overflow:'hidden'});
   const exitBtn=h('button',{className:'btn',onClick:()=>ss({employee:null,selEmp:null,screen:'login',lastDone:null,profileData:null}),style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:11,fontWeight:700,padding:'4px 10px',cursor:'pointer',letterSpacing:'.05em',fontFamily:"'Roboto',sans-serif"}},'SAIR');
   wrap.appendChild(topBar('☑','Confere',exitBtn));
@@ -456,7 +382,6 @@ function renderChecklists(){
   ib.appendChild(div({textAlign:'right'},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},dateStr),div({fontSize:13,color:allDone?'#A5D6A7':'#FFD54F',fontWeight:700,marginTop:2},doneCount+'/'+total+' FEITOS')));
   wrap.appendChild(ib);
   wrap.appendChild(h('div',{className:'prog-track'},h('div',{className:'prog-fill',style:{width:total>0?((doneCount/total)*100)+'%':'0%'}})));
-
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto',className:'pb'});
   if(error)body.appendChild(h('div',{className:'err-bar'},error));
   if(lastDone){
@@ -468,7 +393,6 @@ function renderChecklists(){
     body.appendChild(banner);
   }
   body.appendChild(div({height:8}));
-
   const sectors=[...new Set(checklists.map(cl=>cl.sector||'Geral'))].sort();
   sectors.forEach(sector=>{
     const sCls=checklists.filter(cl=>(cl.sector||'Geral')===sector);
@@ -497,11 +421,8 @@ function renderChecklists(){
     });
     body.appendChild(div({height:8}));
   });
-
   if(allDone){body.appendChild(div({background:C.white,border:`1px solid ${C.bd}`,padding:'32px 20px',textAlign:'center'},div({fontSize:52,marginBottom:10},'🏆'),div({fontSize:13,fontWeight:700,color:C.navy,letterSpacing:'.05em'},'MISSÃO CUMPRIDA!'),div({fontSize:12,color:C.t3,marginTop:6},'Todos os checklists foram concluídos.')));}
-
   wrap.appendChild(body);
-
   if(confirmRedo){
     const cl=confirmRedo;const prev=completedByMap[cl.id];let motivoVal='';
     const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)ss({confirmRedo:null});}});
@@ -519,109 +440,55 @@ function renderChecklists(){
   return wrap;
 }
 
-// ── PROFILE / GAMIFICATION TAB ────────────────────────────────────────────
-function renderProfile(){
+function renderProfileTab(){
   const {employee,profileData,profileLoading,profileRankTab}=state;
   const wrap=div({display:'flex',flexDirection:'column',flex:1,overflow:'hidden'});
   const exitBtn=h('button',{className:'btn',onClick:()=>ss({employee:null,selEmp:null,screen:'login',lastDone:null,profileData:null}),style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:11,fontWeight:700,padding:'4px 10px',cursor:'pointer',letterSpacing:'.05em',fontFamily:"'Roboto',sans-serif"}},'SAIR');
   wrap.appendChild(topBar('🏆','Meu Perfil',exitBtn));
-
   const body=div({flex:1,overflowY:'auto',className:'pb'});
-
-  if(profileLoading){
-    body.appendChild(div({padding:'48px',textAlign:'center'},h('div',{className:'spinner'}),div({fontSize:12,color:C.t3,marginTop:12,fontWeight:700,letterSpacing:'.06em'},'CARREGANDO PERFIL...')));
-    wrap.appendChild(body);return wrap;
-  }
-
-  if(!profileData){
-    body.appendChild(div({padding:'40px',textAlign:'center'},div({fontSize:36,marginBottom:12},'👤'),div({fontSize:13,color:C.t3},'Carregando seus dados...')));
-    wrap.appendChild(body);return wrap;
-  }
-
-  const d=profileData;
-  const lv=getLevel(d.totalScore);
-  const badges=BADGE_DEFS.map(b=>({...b,unlocked:b.check(d)}));
+  if(profileLoading){body.appendChild(div({padding:'48px',textAlign:'center'},h('div',{className:'spinner'}),div({fontSize:12,color:C.t3,marginTop:12,fontWeight:700,letterSpacing:'.06em'},'CARREGANDO PERFIL...')));wrap.appendChild(body);return wrap;}
+  if(!profileData){body.appendChild(div({padding:'40px',textAlign:'center'},div({fontSize:36,marginBottom:12},'👤'),div({fontSize:13,color:C.t3},'Carregando seus dados...')));wrap.appendChild(body);return wrap;}
+  const d=profileData,lv=getLevel(d.totalScore),badges=BADGE_DEFS.map(b=>({...b,unlocked:b.check(d)}));
   const nextMilestone=d.streak<7?7:d.streak<10?10:d.streak<30?30:d.streak<90?90:100;
   const streakPct=Math.min(Math.round((d.streak/nextMilestone)*100),100);
-  const weekGoal=500;
-  const weekPct=Math.min(Math.round((d.weekScore/weekGoal)*100),100);
+  const weekGoal=500,weekPct=Math.min(Math.round((d.weekScore/weekGoal)*100),100);
   const DAY_LABELS=['D','S','T','Q','Q','S','S'];
-
-  // Profile header
   const hdr=div({background:C.white,border:`1px solid ${C.bd}`,borderBottom:'none',padding:'16px',display:'flex',alignItems:'center',gap:14});
   hdr.appendChild(div({width:52,height:52,borderRadius:'50%',background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,color:'#fff',flexShrink:0},employee.initials));
-  hdr.appendChild(div({flex:1},
-    div({fontSize:16,fontWeight:700,color:C.tx},employee.name),
-    div({fontSize:13,color:C.t3,marginTop:2},employee.role)
-  ));
+  hdr.appendChild(div({flex:1},div({fontSize:16,fontWeight:700,color:C.tx},employee.name),div({fontSize:13,color:C.t3,marginTop:2},employee.role)));
   hdr.appendChild(h('span',{className:'lv-badge',style:{background:lv.color,color:lv.text}},'Nível '+lv.level+' · '+lv.name));
   body.appendChild(hdr);
-
-  // Streak card
-  const sc=div({className:'pcard',style:{borderTop:`4px solid #BA7517`}});
+  const sc=div({className:'pcard',style:{borderTop:'4px solid #BA7517'}});
   sc.appendChild(div({fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:10},'Sequência Atual'));
   sc.appendChild(div({display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:12},
-    div({},
-      h('span',{className:'streak-num'},String(d.streak)),
-      h('span',{style:{fontSize:16,color:C.t3,marginLeft:6,verticalAlign:'middle'}},'dias'),
-      h('span',{className:'flame'},'🔥')
-    ),
-    div({textAlign:'right'},
-      div({fontSize:11,color:C.t3},'Recorde pessoal'),
-      div({fontSize:18,fontWeight:700,color:C.tx,marginTop:2},d.streak+' dias')
-    )
+    div({},h('span',{className:'streak-num'},String(d.streak)),h('span',{style:{fontSize:16,color:C.t3,marginLeft:6,verticalAlign:'middle'}},'dias'),h('span',{className:'flame'},'🔥')),
+    div({textAlign:'right'},div({fontSize:11,color:C.t3},'Recorde pessoal'),div({fontSize:18,fontWeight:700,color:C.tx,marginTop:2},d.streak+' dias'))
   ));
-  // Week dots
   const weekDots=div({display:'flex',gap:5,marginBottom:12});
   d.weekDays.forEach((active,i)=>{
     weekDots.appendChild(div({flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3},
-      div({width:'100%',maxWidth:'36px',height:'32px',borderRadius:4,background:active?'#FAC775':'#EBEBEB',border:`1px solid ${active?'#BA7517':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto'},
-        active?h('span',{style:{fontSize:16}},'✓'):''
-      ),
+      div({width:'100%',maxWidth:'36px',height:'32px',borderRadius:4,background:active?'#FAC775':'#EBEBEB',border:`1px solid ${active?'#BA7517':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto'},active?h('span',{style:{fontSize:16}},'✓'):''),
       div({fontSize:10,color:C.t3},DAY_LABELS[i])
     ));
   });
   sc.appendChild(weekDots);
-  sc.appendChild(div({fontSize:11,color:C.t3,display:'flex',justifyContent:'space-between',marginBottom:4},
-    h('span',{},'Próximo badge: '+nextMilestone+' dias'),
-    h('span',{},d.streak+'/'+nextMilestone)
-  ));
-  const bw=div({className:'bar-wrap'});bw.appendChild(div({className:'bar-fill',style:{width:streakPct+'%',background:'#BA7517'}}));
-  sc.appendChild(bw);
+  sc.appendChild(div({fontSize:11,color:C.t3,display:'flex',justifyContent:'space-between',marginBottom:4},h('span',{},'Próximo badge: '+nextMilestone+' dias'),h('span',{},d.streak+'/'+nextMilestone)));
+  const bw=div({className:'bar-wrap'});bw.appendChild(div({className:'bar-fill',style:{width:streakPct+'%',background:'#BA7517'}}));sc.appendChild(bw);
   body.appendChild(sc);
-
-  // Score card
   const skc=div({className:'pcard'});
   skc.appendChild(div({fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:10},'Pontuação'));
   skc.appendChild(div({display:'flex',gap:10,marginBottom:14},
-    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},
-      div({fontSize:26,fontWeight:900,color:C.navy},String(d.weekScore)),
-      div({fontSize:11,color:C.t3,marginTop:2},'ESTA SEMANA')
-    ),
-    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},
-      div({fontSize:26,fontWeight:900,color:C.navy},String(d.monthScore)),
-      div({fontSize:11,color:C.t3,marginTop:2},'ESTE MÊS')
-    ),
-    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},
-      div({fontSize:26,fontWeight:900,color:C.navy},String(d.totalDone)),
-      div({fontSize:11,color:C.t3,marginTop:2},'TOTAL FEITOS')
-    )
+    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},div({fontSize:26,fontWeight:900,color:C.navy},String(d.weekScore)),div({fontSize:11,color:C.t3,marginTop:2},'ESTA SEMANA')),
+    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},div({fontSize:26,fontWeight:900,color:C.navy},String(d.monthScore)),div({fontSize:11,color:C.t3,marginTop:2},'ESTE MÊS')),
+    div({flex:1,background:'#F0F3F9',padding:'12px',textAlign:'center'},div({fontSize:26,fontWeight:900,color:C.navy},String(d.totalDone)),div({fontSize:11,color:C.t3,marginTop:2},'TOTAL FEITOS'))
   ));
-  skc.appendChild(div({fontSize:11,color:C.t3,display:'flex',justifyContent:'space-between',marginBottom:4},
-    h('span',{},'Meta semanal ('+weekGoal+' pts)'),
-    h('span',{},weekPct+'%')
-  ));
-  const bw2=div({className:'bar-wrap'});bw2.appendChild(div({className:'bar-fill',style:{width:weekPct+'%',background:C.green}}));
-  skc.appendChild(bw2);
+  skc.appendChild(div({fontSize:11,color:C.t3,display:'flex',justifyContent:'space-between',marginBottom:4},h('span',{},'Meta semanal ('+weekGoal+' pts)'),h('span',{},weekPct+'%')));
+  const bw2=div({className:'bar-wrap'});bw2.appendChild(div({className:'bar-fill',style:{width:weekPct+'%',background:C.green}}));skc.appendChild(bw2);
   body.appendChild(skc);
-
-  // Ranking card
   const rkc=div({className:'pcard'});
   rkc.appendChild(div({fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:10},'Ranking'));
-  const toggle=div({className:'rank-toggle',style:{marginBottom:12}});
-  ['week','month'].forEach(tab=>{
-    toggle.appendChild(h('button',{className:`rtab${profileRankTab===tab?' active':''}`,onClick:()=>ss({profileRankTab:tab})},tab==='week'?'Semana':'Mês'));
-  });
+  const toggle=div({className:'rank-toggle'});
+  ['week','month'].forEach(tab=>{toggle.appendChild(h('button',{className:`rtab${profileRankTab===tab?' active':''}`,onClick:()=>ss({profileRankTab:tab})},tab==='week'?'Semana':'Mês'));});
   rkc.appendChild(toggle);
   const isWeek=profileRankTab==='week';
   const sorted=[...d.ranking].sort((a,b)=>Number(isWeek?b.week_score:b.month_score)-Number(isWeek?a.week_score:a.month_score));
@@ -645,8 +512,6 @@ function renderProfile(){
     ));
   }
   body.appendChild(rkc);
-
-  // Badges
   const bc=div({className:'pcard'});
   bc.appendChild(div({fontSize:11,fontWeight:700,color:C.t3,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:12},'Conquistas'));
   const bg=div({className:'badge-grid'});
@@ -657,28 +522,25 @@ function renderProfile(){
       div({fontSize:10,color:C.t3},b.unlocked?b.desc:'🔒 '+b.desc)
     ));
   });
-  bc.appendChild(bg);
-  body.appendChild(bc);
-
+  bc.appendChild(bg);body.appendChild(bc);
   wrap.appendChild(body);return wrap;
 }
 
-// ── HOME SCREEN (container) ───────────────────────────────────────────────
 function renderHome(){
   const scr=div({display:'flex',flexDirection:'column',flex:1,position:'relative',overflow:'hidden'});
   const content=div({flex:1,display:'flex',flexDirection:'column',overflow:'hidden'});
-  if(state.activeTab==='checklists')content.appendChild(renderChecklists());
-  else content.appendChild(renderProfile());
+  if(state.activeTab==='checklists')content.appendChild(renderChecklistsTab());
+  else content.appendChild(renderProfileTab());
   scr.appendChild(content);
   scr.appendChild(bottomNav());
   return scr;
 }
 
-// ── EXEC ──────────────────────────────────────────────────────────────────
 function renderExec(){
   const {activeList,stepIdx,sVals,sPhotos,sChecks,error}=state;
   const steps=activeList.checklist_steps,step=steps[stepIdx];
   const total=steps.length,prog=Math.round((stepIdx/total)*100),isLast=stepIdx+1>=total,ok=canNext(),multi=step.step_items.length>1;
+  const isProbStep=isProblemStep(step),probAns=isProbStep?problemChecked(step):undefined;
   if(!fileInput){fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='image/*';fileInput.capture='environment';fileInput.style.display='none';fileInput.addEventListener('change',handlePhoto);document.body.appendChild(fileInput);}
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('📋',activeList.name.toUpperCase()));
@@ -689,40 +551,36 @@ function renderExec(){
   scr.appendChild(sub);
   scr.appendChild(h('div',{className:'prog-track'},h('div',{className:'prog-fill',style:{width:prog+'%'}})));
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
-  const isProbStep=isProblemStep(step);
-  const probAns=isProbStep?problemChecked(step):undefined;
-
   step.step_items.forEach((item,i)=>{
-    // Na etapa de problema: oculta texto e foto até responder "Feito"
     const isProbText=isProbStep&&item.label.includes('descreva');
     const isProbPhoto=isProbStep&&item.label.includes('opcional');
-    if((isProbText||isProbPhoto)&&probAns!==true)return; // esconde se não marcou "Feito"
-
+    if((isProbText||isProbPhoto)&&probAns!==true)return;
     const isOptPhoto=item.label.toLowerCase().includes('opcional');
-    const tL={check:isProbStep&&item.label.includes('Detectou')?'PROBLEMA ENCONTRADO?':item.type==='check'?'CONFIRMAÇÃO':'CONFIRMAÇÃO',photo:isOptPhoto?'FOTO (OPCIONAL)':'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:isProbText?'DESCREVA O PROBLEMA':'OBSERVAÇÃO'}[item.type]||'ITEM';
-    const tI={check:'🔧',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
-    body.appendChild(h('div',{className:'sec',style:{background:isProbStep?'#7B1010':C.navy}},h('span',{},tI+'  '+tL)));
-    const box=div({background:isProbStep?'#FFF8F8':C.white,border:`1px solid ${isProbStep?'#FFCDD2':C.bd}`,borderTop:'none',padding:'14px'});
+    const secBg=isProbStep?'#7B1010':C.navy;
+    const cardBg=isProbStep?'#FFF8F8':C.white;
+    const cardBd=isProbStep?'#FFCDD2':C.bd;
+    const tL={check:isProbStep&&item.label.includes('Detectou')?'PROBLEMA ENCONTRADO?':'CONFIRMAÇÃO',photo:isOptPhoto?'FOTO (OPCIONAL)':'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:isProbText?'DESCREVA O PROBLEMA':'OBSERVAÇÃO'}[item.type]||'ITEM';
+    const tI={check:isProbStep?'🔧':'✓',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
+    body.appendChild(h('div',{className:'sec',style:{background:secBg}},h('span',{},tI+'  '+tL)));
+    const box=div({background:cardBg,border:`1px solid ${cardBd}`,borderTop:'none',padding:'14px'});
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
       const ck=sChecks[item.id];
       const btnRow=div({display:'flex',gap:10});
-      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:true}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===true?'#2E7D32':'#fff',color:ck===true?'#fff':'#2E7D32',border:`2px solid #2E7D32`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✓  Sim'));
+      btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:true}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===true?'#2E7D32':'#fff',color:ck===true?'#fff':'#2E7D32',border:'2px solid #2E7D32',borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✓  Sim'));
       btnRow.appendChild(h('button',{className:'btn',onClick:()=>ss({sChecks:{...sChecks,[item.id]:false}}),style:{flex:1,padding:'16px 12px',fontSize:15,fontWeight:700,background:ck===false?C.red:'#fff',color:ck===false?'#fff':C.red,border:`2px solid ${C.red}`,borderRadius:8,cursor:'pointer',transition:'all .2s',fontFamily:"'Roboto',sans-serif"}},'✕  Não'));
       box.appendChild(btnRow);
     }
     if(item.type==='photo'){
       const ph=sPhotos[item.id],ph2=multi?140:180;
-      const isOptional=item.label.toLowerCase().includes('opcional');
-      if(ph){const w=div({position:'relative',height:ph2+'px'});const img=document.createElement('img');img.src=ph;Object.assign(img.style,{width:'100%',height:'100%',objectFit:'cover',display:'block'});w.appendChild(img);w.appendChild(h('button',{className:'btn',onClick:()=>ss({sPhotos:{...sPhotos,[item.id]:null}}),style:{position:'absolute',top:8,right:8,background:'rgba(0,0,0,.65)',border:'none',color:'#fff',width:30,height:30,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}},'✕'));box.appendChild(w);}
+      if(ph&&ph!=='skip'){const w=div({position:'relative',height:ph2+'px'});const img=document.createElement('img');img.src=ph;Object.assign(img.style,{width:'100%',height:'100%',objectFit:'cover',display:'block'});w.appendChild(img);w.appendChild(h('button',{className:'btn',onClick:()=>ss({sPhotos:{...sPhotos,[item.id]:null}}),style:{position:'absolute',top:8,right:8,background:'rgba(0,0,0,.65)',border:'none',color:'#fff',width:30,height:30,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}},'✕'));box.appendChild(w);}
       else{
-        const photoBtn=h('button',{className:'btn',onClick:()=>triggerPhoto(item.id),style:{height:ph2+'px',background:'#F5F5F5',border:`2px dashed ${C.bd}`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,cursor:'pointer',width:'100%'}},div({fontSize:multi?32:40},'📷'),div({fontSize:13,fontWeight:700,color:C.blue,letterSpacing:'.04em'},isOptional?'TIRAR FOTO (OPCIONAL)':'TIRAR FOTO'),div({fontSize:12,color:C.t3},'Toque para abrir a câmera'));
-        box.appendChild(photoBtn);
-        if(isOptional){const skipBtn=div({textAlign:'center',marginTop:8},h('button',{className:'btn',onClick:()=>ss({sPhotos:{...sPhotos,[item.id]:'skip'}}),style:{background:'transparent',border:'none',color:C.t3,fontSize:12,cursor:'pointer',fontFamily:"'Roboto',sans-serif",textDecoration:'underline'}},'Pular — sem foto'));box.appendChild(skipBtn);}
+        box.appendChild(h('button',{className:'btn',onClick:()=>triggerPhoto(item.id),style:{height:ph2+'px',background:'#F5F5F5',border:`2px dashed ${C.bd}`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,cursor:'pointer',width:'100%'}},div({fontSize:multi?32:40},'📷'),div({fontSize:13,fontWeight:700,color:C.blue,letterSpacing:'.04em'},isOptPhoto?'TIRAR FOTO (OPCIONAL)':'TIRAR FOTO'),div({fontSize:12,color:C.t3},'Toque para abrir a câmera')));
+        if(isOptPhoto){box.appendChild(div({textAlign:'center',marginTop:8},h('button',{className:'btn',onClick:()=>ss({sPhotos:{...sPhotos,[item.id]:'skip'}}),style:{background:'transparent',border:'none',color:C.t3,fontSize:12,cursor:'pointer',fontFamily:"'Roboto',sans-serif",textDecoration:'underline'}},'Pular — sem foto')));}
       }
     }
     if(item.type==='number'){const inp=document.createElement('input');inp.type='number';inp.className='inp';inp.placeholder='Ex: -20';inp.value=sVals[item.id]||'';inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));box.appendChild(inp);}
-    if(item.type==='text'){const ta=document.createElement('textarea');ta.className='inp';ta.rows=3;ta.placeholder='Escreva suas observações...';ta.value=sVals[item.id]||'';ta.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));box.appendChild(ta);}
+    if(item.type==='text'){const ta=document.createElement('textarea');ta.className='inp';ta.rows=3;ta.placeholder=isProbText?'Descreva o problema encontrado...':'Escreva suas observações...';ta.value=sVals[item.id]||'';ta.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));box.appendChild(ta);}
     body.appendChild(box);
     if(i<step.step_items.length-1)body.appendChild(div({height:8}));
   });
@@ -731,14 +589,6 @@ function renderExec(){
   btns.appendChild(h('button',{className:'btn btn-gray',onClick:abandonList},'◀  Voltar'));
   btns.appendChild(h('button',{className:'btn '+(ok?(isLast?'btn-green':'btn-blue'):'btn-gray'),onClick:ok?nextStep:null,disabled:!ok},isLast?'✓  Finalizar':'Próximo  ▶'));
   scr.appendChild(btns);return scr;
-}
-
-// ── LOADING ────────────────────────────────────────────────────────────────
-function renderLoading(){
-  const scr=div({display:'flex',flexDirection:'column',flex:1});
-  scr.appendChild(topBar('☑','Confere — Planet Pizza'));
-  scr.appendChild(div({flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16},h('div',{className:'spinner'}),div({fontSize:13,color:C.t3,fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')));
-  return scr;
 }
 
 function render(){
@@ -753,95 +603,4 @@ function render(){
 render();init();
 </script>
 </body>
-</html>// ── LOGIN ──────────────────────────────────────────────────────────────
-function renderLogin(){
-  const {error}=state;
-  const scr=div({display:'flex',flexDirection:'column',flex:1});
-  scr.appendChild(topBar('☑','Confere — Acesso do Operador'));
-  if(error)scr.appendChild(h('div',{className:'err-bar'},error));
-  const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
-
-  // Seção busca
-  const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
-  const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
-  const swrap=div({className:'search-wrap'});
-  swrap.appendChild(h('span',{className:'search-icon'},'🔍'));
-  const sinp=document.createElement('input');sinp.type='text';sinp.className='search-inp';sinp.placeholder='Buscar pelo nome...';
-  swrap.appendChild(sinp);sw.appendChild(swrap);
-  const empList=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none'});
-
-  // Seção PIN (oculta inicialmente)
-  const selSec=h('div',{className:'sec'},h('span',{},'Operador Identificado'));selSec.style.display='none';
-  const selCard=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',display:'none'});
-  const pinSec=h('div',{className:'sec'},h('span',{},'PIN de Acesso'));pinSec.style.display='none';
-  const pb=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'28px 24px',display:'none'});
-  pb.appendChild(div({fontSize:13,color:C.t3,textAlign:'center',marginBottom:16,letterSpacing:'.04em'},'Digite seu PIN de 4 dígitos'));
-  const pinWrap=div({position:'relative',display:'flex',justifyContent:'center',gap:12,marginBottom:8,cursor:'text'});
-  const boxes=[];
-  for(let i=0;i<4;i++){const box=div({style:{width:'60px',height:'72px',border:`2px solid ${C.bd}`,background:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',fontWeight:'700',transition:'all .15s',borderRadius:'4px'}});box.className='pin-box';boxes.push(box);pinWrap.appendChild(box);}
-  const errMsg=div({textAlign:'center',color:C.red,fontSize:13,fontWeight:700,marginTop:8,display:'none'},'PIN INCORRETO — TENTE NOVAMENTE');
-  const nativeInp=document.createElement('input');
-  nativeInp.type='tel';nativeInp.inputMode='numeric';nativeInp.maxLength=4;nativeInp.autocomplete='off';
-  Object.assign(nativeInp.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:'0.01',fontSize:'32px',border:'none',background:'transparent',cursor:'text',zIndex:'10'});
-
-  function updateBoxes(val,isErr){boxes.forEach((b,i)=>{b.textContent=i<val.length?'●':'';b.style.borderColor=isErr?C.red:i<=val.length&&val.length>0?C.blue:C.bd;b.style.background=isErr?'#FFEBEE':i<val.length?'#E3F2FD':C.white;});}
-
-  nativeInp.addEventListener('input',e=>{
-    const val=e.target.value.replace(/[^0-9]/g,'').slice(0,4);
-    e.target.value=val;errMsg.style.display='none';updateBoxes(val,false);
-    if(val.length===4){
-      const emp=state.selEmp;
-      const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
-      if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
-      else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
-    }
-  });
-  pinWrap.appendChild(nativeInp);
-  // iOS fix: touchstart garante abertura do teclado dentro do gesto
-  pinWrap.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
-  pinWrap.addEventListener('click',()=>nativeInp.focus());
-  pb.addEventListener('touchstart',()=>nativeInp.focus(),{passive:true});
-  pb.appendChild(pinWrap);pb.appendChild(errMsg);
-
-  // Mostra PIN sem re-render — foco síncrono funciona no iOS
-  function showPin(emp){
-    state.selEmp=emp;
-    selCard.innerHTML='';
-    selCard.appendChild(div({padding:'14px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:`1px solid ${C.bd}`},
-      div({width:48,height:48,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
-      div({flex:1},div({fontSize:22,fontWeight:700,color:C.tx},emp.name),div({fontSize:15,color:C.t3,marginTop:2},emp.role)),
-      h('button',{className:'btn',onClick:()=>{
-        state.selEmp=null;nativeInp.value='';updateBoxes('',false);
-        opSec.style.display='';sw.style.display='';empList.style.display='';
-        selSec.style.display='none';selCard.style.display='none';
-        pinSec.style.display='none';pb.style.display='none';
-        sinp.value='';renderList('');
-      },style:{background:C.bg,border:`1px solid ${C.bd}`,color:C.t2,fontSize:11,padding:'6px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"}},'TROCAR')
-    ));
-    opSec.style.display='none';sw.style.display='none';empList.style.display='none';
-    selSec.style.display='';selCard.style.display='';pinSec.style.display='';pb.style.display='';
-    nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';
-    // iOS trick: duplo rAF garante foco após DOM estabilizar
-    requestAnimationFrame(()=>requestAnimationFrame(()=>nativeInp.focus())); // síncrono dentro do click → iOS permite
-  }
-
-  function renderList(q){
-    empList.innerHTML='';
-    const f=state.operators.filter(o=>o.name.toLowerCase().includes((q||'').toLowerCase()));
-    if(!f.length){empList.appendChild(div({padding:'16px',textAlign:'center',color:C.t3,fontSize:13},'Nenhum operador encontrado'));return;}
-    f.forEach(emp=>{
-      empList.appendChild(h('button',{className:'btn',onClick:()=>{sinp.blur();showPin(emp);},
-        style:{background:C.white,border:'none',borderBottom:`1px solid ${C.bd}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,width:'100%',cursor:'pointer',textAlign:'left'}},
-        div({width:42,height:42,borderRadius:'50%',background:'#546E7A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0},emp.initials),
-        div({flex:1},div({fontSize:20,fontWeight:700,color:C.tx},emp.name),div({fontSize:14,color:C.t3,marginTop:2},emp.role)),
-        h('span',{style:{fontSize:20,color:C.t4}},'›')
-      ));
-    });
-  }
-  sinp.addEventListener('input',e=>renderList(e.target.value));
-  renderList('');
-  body.appendChild(opSec);body.appendChild(sw);body.appendChild(empList);
-  body.appendChild(selSec);body.appendChild(selCard);
-  body.appendChild(pinSec);body.appendChild(pb);
-  scr.appendChild(body);return scr;
-}
+</html>
