@@ -228,6 +228,8 @@ async function hashPassword(password){
 
 async function init(){
   if(!SESSION){window.location.href='login.html';return;}
+  // Show loading screen immediately
+  ss({screen:'loading'});
   try{
     const [opsR,clsR,unitsR]=await Promise.all([
       sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
@@ -1322,17 +1324,27 @@ function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
   if(!SESSION){window.location.href='login.html';return;}
-  if(state.screen==='unit_select'){c=renderUnitSelect();}
-  else if(state.screen==='loading'){
-    c=div({display:'flex',flexDirection:'column',minHeight:'100vh'},
-      h('div',{className:'top-bar'},h('span',{style:{color:'#fff',fontWeight:900,fontSize:16}},'☑ Confere')),
-      div({flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16},
-        h('div',{className:'spinner'}),
-        div({fontSize:13,color:'#888',fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')
-      )
+  try{
+    if(state.screen==='unit_select'){c=renderUnitSelect();}
+    else if(state.screen==='dashboard'){c=renderDashboard();}
+    else{
+      // Loading screen padrão
+      c=div({display:'flex',flexDirection:'column',minHeight:'100vh'},
+        h('div',{className:'top-bar'},h('span',{style:{color:'#fff',fontWeight:900,fontSize:16}},'☑ Confere')),
+        div({flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16},
+          h('div',{className:'spinner'}),
+          div({fontSize:13,color:'#888',fontWeight:700,letterSpacing:'.06em'},'CARREGANDO...')
+        )
+      );
+    }
+  }catch(err){
+    console.error('Render error:',err);
+    c=div({display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:12},
+      div({fontSize:32},'⚠️'),
+      div({fontSize:14,fontWeight:700,color:'#C62828'},'Erro ao carregar. Recarregue a página.'),
+      h('button',{onclick:'location.reload()',style:{marginTop:8,padding:'8px 20px',background:'#1A237E',color:'#fff',border:'none',cursor:'pointer',fontFamily:"'Roboto',sans-serif",fontWeight:700}},'Recarregar')
     );
-  } else if(state.screen==='login'){c=renderLogin();}
-  else if(state.screen==='dashboard'){c=renderDashboard();}
+  }
   if(c)root.appendChild(c);
 }
 
