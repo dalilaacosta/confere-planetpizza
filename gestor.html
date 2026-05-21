@@ -1110,6 +1110,7 @@ function renderDocuments(){
         h('td',{},h('span',{className:'tag '+st.cls},st.label)),
         h('td',{},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'document',modalData:{...doc}})},'Editar'),
+          doc.file_url?h('a',{href:doc.file_url,target:'_blank',style:{display:'inline-block',marginRight:4,padding:'5px 9px',background:'#0D7390',color:'#fff',fontSize:11,fontWeight:700,textDecoration:'none',letterSpacing:'.04em'}},'📎 Ver'):'',
           h('button',{className:`btn btn-sm ${doc.status!=='archived'?'btn-gray':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
             const newStatus=doc.status==='archived'?'active':'archived';
             await sb.from('documents').update({status:newStatus}).eq('id',doc.id);
@@ -1501,20 +1502,14 @@ function renderDocuments(){
     fileInput.addEventListener('change',async e=>{
       const f=e.target.files?.[0];if(!f)return;selectedFile=f;
       fileName.textContent='📄 '+f.name;fileName.style.display='block';
-      aiStatus.textContent='⏳ Analisando...';aiStatus.style.color='#1565C0';aiStatus.style.display='block';
-      fileBtn.disabled=true;fileBtn.textContent='Analisando...';
-      try{
-        const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
-        const isPDF=f.type==='application/pdf';
-        const contentPart=isPDF?{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}}:{type:'image',source:{type:'base64',media_type:f.type,data:base64}};
-        const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:[contentPart,{type:'text',text:'Analise este documento e extraia em JSON puro: {"nome":"nome do documento","data_vencimento":"YYYY-MM-DD ou null"}. Responda APENAS o JSON.'}]}]})});
-        const data=await resp.json();
-        const info=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
-        if(info.nome&&!md.name){md.name=info.nome;nameInp.value=info.nome;}
-        if(info.data_vencimento&&expiryInp){md.expiry_date=info.data_vencimento;expiryInp.value=info.data_vencimento;}
-        aiStatus.textContent='✅ Dados extraídos! Verifique os campos.';aiStatus.style.color='#2E7D32';
-      }catch(err){aiStatus.textContent='⚠️ Não foi possível ler. Preencha manualmente.';aiStatus.style.color='#B76E00';}
-      fileBtn.disabled=false;fileBtn.textContent='📎 Trocar arquivo';
+      // Preenche o nome do documento automaticamente com o nome do arquivo (sem extensão)
+      if(!md.name){
+        const autoName=f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ').replace(/\w/g,c=>c.toUpperCase());
+        md.name=autoName;nameInp.value=autoName;
+      }
+      aiStatus.textContent='📎 Arquivo selecionado! Preencha a data de vencimento e clique em Salvar.';
+      aiStatus.style.color='#2E7D32';aiStatus.style.display='block';
+      fileBtn.textContent='📎 Trocar arquivo';
     });
     aiSection.appendChild(fileBtn);aiSection.appendChild(fileName);aiSection.appendChild(aiStatus);
     mb.appendChild(aiSection);
