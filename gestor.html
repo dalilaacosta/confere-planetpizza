@@ -1110,7 +1110,7 @@ function renderDocuments(){
         h('td',{},h('span',{className:'tag '+st.cls},st.label)),
         h('td',{},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'document',modalData:{...doc}})},'Editar'),
-          doc.file_url?h('a',{href:doc.file_url,target:'_blank',style:{display:'inline-block',marginRight:4,padding:'5px 9px',background:'#0D7390',color:'#fff',fontSize:11,fontWeight:700,textDecoration:'none',letterSpacing:'.04em',cursor:'pointer'}},'📎 Ver'):h('button',{className:'btn btn-gray btn-sm',style:{marginRight:4,opacity:0.6},onClick:()=>ss({modal:'document',modalData:{...doc}})},'+ Anexar'),
+          (doc.file_url?h('a',{href:doc.file_url,target:'_blank',className:'btn btn-primary btn-sm',style:{marginRight:4,textDecoration:'none'}},'📎 Ver'):h('span',{style:{marginRight:4,fontSize:11,color:'#999'}},'Sem arquivo')),
           h('button',{className:`btn btn-sm ${doc.status!=='archived'?'btn-gray':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
             const newStatus=doc.status==='archived'?'active':'archived';
             await sb.from('documents').update({status:newStatus}).eq('id',doc.id);
@@ -1236,10 +1236,19 @@ function renderDocuments(){
         // Upload file if selected
         if(selectedFile){
           try{
-            const path='documents/'+Date.now()+'_'+selectedFile.name.replace(/\s/g,'_');
-            const{error:upErr}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true});
-            if(!upErr){const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);fileUrl=publicUrl;}
-          }catch(e){}
+            const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+            const path='documents/'+Date.now()+'_'+safeName;
+            const{error:upErr}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true,contentType:selectedFile.type});
+            if(upErr){
+              alert('Erro ao fazer upload: '+upErr.message+'. Verifique o bucket de armazenamento.');
+              ss({saving:false});return;
+            }
+            const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);
+            fileUrl=publicUrl;
+          }catch(upEx){
+            alert('Erro no upload: '+upEx.message);
+            ss({saving:false});return;
+          }
         }
         const data={name:md.name,unit_id:md.unit_id||null,expiry_date:md.expiry_date,renewal_frequency:md.renewal_frequency||'annual',remind_days_before:Number(md.remind_days_before)||30,notes:md.notes||null,file_url:fileUrl,status:'active',company_id:COMPANY_ID};
         if(isEdit){await sb.from('documents').update(data).eq('id',md.id);}
@@ -1449,9 +1458,12 @@ function renderDocuments(){
   const expired=documents.filter(d=>docStatus(d).days<0).length;
   const expiringSoon=documents.filter(d=>{const s=docStatus(d);return s.days>=0&&s.days<=d.remind_days_before;}).length;
   const okDocs=documents.filter(d=>docStatus(d).days>d.remind_days_before).length;
-  const kpis=div({className:'kpi-grid',style:{gridTemplateColumns:'repeat(3,1fr)'}});
-  [{val:expired,label:'Vencidos',color:'#C62828'},{val:expiringSoon,label:'Vence em breve',color:'#B76E00'},{val:okDocs,label:'Em dia',color:'#2E7D32'}].forEach(k=>{
-    kpis.appendChild(div({className:'kpi',style:{borderLeftColor:k.color}},div({className:'kpi-val',style:{color:k.color}},String(k.val)),div({className:'kpi-label'},k.label)));
+  const kpis=h('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px',marginBottom:'16px'}});
+  [{val:expired,label:'Vencidos',color:'#C62828',bg:'#FFEBEE'},{val:expiringSoon,label:'Vence em breve',color:'#B76E00',bg:'#FFF8E1'},{val:okDocs,label:'Em dia',color:'#2E7D32',bg:'#E8F5E9'}].forEach(k=>{
+    kpis.appendChild(h('div',{style:{background:k.bg,border:'1px solid #D0D0D0',borderLeft:'4px solid '+k.color,padding:'14px 16px'}},
+      h('div',{style:{fontSize:'28px',fontWeight:'900',color:k.color,lineHeight:'1'}},String(k.val)),
+      h('div',{style:{fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',marginTop:'4px'}},k.label)
+    ));
   });
   frag.appendChild(kpis);
   frag.appendChild(div({display:'flex',justifyContent:'flex-end',marginBottom:12},
@@ -1546,7 +1558,28 @@ function renderDocuments(){
         if(!md.name||!md.expiry_date){ss({error:'Nome e data são obrigatórios.'});return;}
         ss({saving:true});
         let fileUrl=md.file_url||null;
-        if(selectedFile){try{const path='documents/'+Date.now()+'_'+selectedFile.name.replace(/\s/g,'_');const{error:upErr}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true});if(!upErr){const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);fileUrl=publicUrl;}}catch(e){}}
+        if(selectedFile){
+          try{
+            // Tenta fazer upload no Supabase Storage
+            const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+            const path='documents/'+Date.now()+'_'+safeName;
+            const{error:upErr,data:upData}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true,contentType:selectedFile.type});
+            if(upErr){
+              console.error('Upload error:',upErr);
+              // Fallback: salva como base64 se o arquivo for pequeno (< 500kb)
+              if(selectedFile.size<500000){
+                const b64=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(selectedFile);});
+                fileUrl=b64;
+              } else {
+                ss({saving:false,error:'Erro no upload: '+upErr.message+'. Arquivo muito grande. Tente com um arquivo menor.'});
+                return;
+              }
+            } else {
+              const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);
+              fileUrl=publicUrl;
+            }
+          }catch(e){console.error('Upload exception:',e);}
+        }
         const data={name:md.name,unit_id:md.unit_id||null,expiry_date:md.expiry_date,renewal_frequency:md.renewal_frequency||'annual',remind_days_before:Number(md.remind_days_before)||30,notes:md.notes||null,file_url:fileUrl,status:'active',company_id:COMPANY_ID};
         if(isEdit){await sb.from('documents').update(data).eq('id',md.id);}else{await sb.from('documents').insert(data);}
         await reload();ss({saving:false,modal:null,modalData:{},success:isEdit?'Documento atualizado!':'Documento cadastrado!'});
