@@ -1485,6 +1485,7 @@ function renderDocuments(){
       h('td',{},h('span',{className:'tag '+st.cls},st.label)),
       h('td',{},
         h('button',{className:'btn btn-primary btn-sm',style:{marginRight:4},onClick:()=>ss({modal:'document',modalData:{...doc}})},'Editar'),
+        doc.file_url?h('a',{href:doc.file_url,target:'_blank',style:{display:'inline-block',marginRight:4,padding:'5px 9px',background:'#0D7390',color:'#fff',fontSize:11,fontWeight:700,textDecoration:'none'}},'📎 Ver'):h('span',{style:{fontSize:11,color:'#aaa',marginRight:4}},'—'),
         h('button',{className:`btn btn-sm ${doc.status!=='archived'?'btn-gray':'btn-success'}`,style:{marginRight:4},onClick:async()=>{
           await sb.from('documents').update({status:doc.status==='archived'?'active':'archived'}).eq('id',doc.id);
           await reload();
