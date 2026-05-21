@@ -1516,7 +1516,6 @@ function renderDocuments(){
           await reload();
         }},doc.status==='archived'?'Reativar':'Arquivar'),
         h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
-          async()=>{
             if(confirm('Excluir "'+doc.name+'"? O arquivo também será removido.')){
               if(doc.file_url&&doc.file_url.includes('/storage/v1/object/public/photos/')){
                 try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
@@ -1524,7 +1523,6 @@ function renderDocuments(){
               await sb.from('documents').delete().eq('id',doc.id);
               await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
             }
-          }
         }},'Excluir')
       )
     ));
