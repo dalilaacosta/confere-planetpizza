@@ -1582,12 +1582,20 @@ function renderDocuments(){
           if(freqSelect)freqSelect.value=doc.frequency;
           if(remindInp)remindInp.value=String(doc.remind);
           suggestBox.style.display='none';
+          const saveBtn=document.getElementById('doc-save-btn');
+          if(saveBtn)saveBtn.disabled=false;
         });
         suggestBox.appendChild(item);
       });
       suggestBox.style.display=docs.length>0?'block':'none';
     }
-    nameInp.addEventListener('input',e=>{md.name=e.target.value;const q=e.target.value.toLowerCase();showSugg(q?PREDEFINED_DOCS.filter(d=>d.name.toLowerCase().includes(q)):PREDEFINED_DOCS);});
+    nameInp.addEventListener('input',e=>{
+      md.name=e.target.value;
+      const q=e.target.value.toLowerCase();
+      showSugg(q?PREDEFINED_DOCS.filter(d=>d.name.toLowerCase().includes(q)):PREDEFINED_DOCS);
+      const saveBtn=document.getElementById('doc-save-btn');
+      if(saveBtn)saveBtn.disabled=!e.target.value.trim();
+    });
     nameInp.addEventListener('focus',()=>showSugg(PREDEFINED_DOCS));
     nameInp.addEventListener('blur',()=>setTimeout(()=>{suggestBox.style.display='none';},200));
     nameWrap.appendChild(nameInp);nameWrap.appendChild(suggestBox);
@@ -1602,15 +1610,11 @@ function renderDocuments(){
     const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='application/pdf,image/*';fileInput.style.display='none';
     const fileBtn=h('button',{className:'btn btn-primary',style:{fontSize:12,padding:'8px 14px'},onClick:()=>fileInput.click()},'📎 Selecionar arquivo');
     const fileName=h('div',{style:{fontSize:12,color:'#555',marginTop:6,display:'none'}});
-    fileInput.addEventListener('change',async e=>{
+    fileInput.addEventListener('change',e=>{
       const f=e.target.files?.[0];if(!f)return;selectedFile=f;
       fileName.textContent='📄 '+f.name;fileName.style.display='block';
-      fileBtn.disabled=true;fileBtn.textContent='Lendo...';
-      aiStatus.textContent='⏳ Extraindo data de vencimento...';aiStatus.style.color='#1565C0';aiStatus.style.display='block';
-      const date=await extractDateFromPDF(f);
-      if(date&&expiryInp){expiryInp.value=date;md.expiry_date=date;aiStatus.textContent='✅ Data encontrada! Verifique o campo abaixo.';aiStatus.style.color='#2E7D32';}
-      else{aiStatus.textContent='⚠️ Data não encontrada. Preencha manualmente.';aiStatus.style.color='#B76E00';}
-      fileBtn.disabled=false;fileBtn.textContent='📎 Trocar arquivo';
+      aiStatus.textContent='✅ Arquivo selecionado. Preencha a data de vencimento manualmente.';
+      aiStatus.style.color='#2E7D32';aiStatus.style.display='block';
     });
     aiSection.appendChild(fileBtn);aiSection.appendChild(fileName);aiSection.appendChild(aiStatus);
     mb.appendChild(aiSection);
@@ -1647,8 +1651,8 @@ function renderDocuments(){
     m.appendChild(mb);
     m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
-      h('button',{className:'btn btn-primary',disabled:saving,onClick:async()=>{
-        if(!md.name||!md.expiry_date){ss({error:'Nome e data são obrigatórios.'});return;}
+      h('button',{className:'btn btn-primary',id:'doc-save-btn',disabled:!(md.name&&md.name.trim())||saving,onClick:async()=>{
+        if(!md.name||!md.expiry_date){ss({error:'Nome e data de vencimento são obrigatórios.'});return;}
         ss({saving:true});
         let fileUrl=md.file_url||null;
         if(selectedFile){
