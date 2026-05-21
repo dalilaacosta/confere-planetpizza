@@ -1135,7 +1135,13 @@ function renderDocuments(){
             await sb.from('documents').update({status:newStatus}).eq('id',doc.id);
             await reload();ss({success:newStatus==='archived'?'Documento arquivado!':'Documento reativado!'});setTimeout(()=>ss({success:null}),3000);
           }},doc.status==='archived'?'Reativar':'Arquivar'),
-          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir este documento? Esta ação não pode ser desfeita.')){await sb.from('documents').delete().eq('id',doc.id);await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);}}},'Excluir')
+          h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+doc.name+'"? O arquivo também será removido do armazenamento.')){
+            if(doc.file_url&&doc.file_url.includes('/storage/v1/object/public/photos/')){
+              try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
+            }
+            await sb.from('documents').delete().eq('id',doc.id);
+            await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
+          }}},'Excluir')
         )
       ));
     });
@@ -1510,7 +1516,15 @@ function renderDocuments(){
           await reload();
         }},doc.status==='archived'?'Reativar':'Arquivar'),
         h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
-          confirmAction('Excluir este documento?',async()=>{await sb.from('documents').delete().eq('id',doc.id);await reload();})
+          async()=>{
+            if(confirm('Excluir "'+doc.name+'"? O arquivo também será removido.')){
+              if(doc.file_url&&doc.file_url.includes('/storage/v1/object/public/photos/')){
+                try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
+              }
+              await sb.from('documents').delete().eq('id',doc.id);
+              await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
+            }
+          }
         }},'Excluir')
       )
     ));
