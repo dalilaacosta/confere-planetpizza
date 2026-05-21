@@ -6,6 +6,7 @@
 <title>ConfereOps — Painel do Gestor</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-size:14px}
@@ -204,6 +205,24 @@ function logout(){
 const SESSION=getSession();
 if(!SESSION){window.location.href='login.html';}
 const COMPANY_ID=SESSION?.company_id;
+
+const PREDEFINED_DOCS=[
+  {name:'Armadilha UV',frequency:'monthly',remind:5},
+  {name:'ASO — Atestado de Saúde Ocupacional',frequency:'annual',remind:30},
+  {name:"Caixa d'água",frequency:'semi-annual',remind:30},
+  {name:'CLCB — Certificado de Licença do Corpo de Bombeiros',frequency:'custom',remind:90},
+  {name:'Coifa e dutos',frequency:'quarterly',remind:15},
+  {name:'Dedetização — Desinsetização',frequency:'quarterly',remind:15},
+  {name:'Dedetização — Desratização',frequency:'quarterly',remind:15},
+  {name:'Estanqueidade do gás',frequency:'annual',remind:30},
+  {name:'Extintores',frequency:'annual',remind:30},
+  {name:'Licença Sanitária',frequency:'annual',remind:60},
+  {name:'LTCAT — Laudo Técnico das Condições Ambientais do Trabalho',frequency:'annual',remind:30},
+  {name:'PCMSO — Programa de Controle Médico de Saúde Ocupacional',frequency:'annual',remind:30},
+  {name:'PGR — Programa de Gerenciamento de Riscos',frequency:'annual',remind:30},
+  {name:"Potabilidade da água",frequency:'semi-annual',remind:30},
+  {name:'Treinamento boas práticas',frequency:'annual',remind:30},
+];
 
 const C={teal:"#0D7390",navy:"#1A237E",blue:"#1565C0",green:"#2E7D32",red:"#C62828",amber:"#F9A825",bd:"#D0D0D0",bg:"#F2F2F2",white:"#fff",tx:"#1A1A1A",t2:"#444",t3:"#777"};
 
@@ -1499,59 +1518,120 @@ function renderDocuments(){
   tbl.appendChild(tbody);frag.appendChild(tbl);
   if(modal==='document'){
     const md=modalData;const isEdit=!!md.id;
-    let expiryInp=null,selectedFile=null;
+    let expiryInp=null,selectedFile=null,freqSelect=null,remindInp=null;
     const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
-    const m=h('div',{className:'modal',style:{maxWidth:'580px',background:'#fff',borderRadius:'4px',maxHeight:'90vh',overflowY:'auto'}});
+    const m=h('div',{className:'modal',style:{maxWidth:'580px',background:'#fff',borderRadius:'4px',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
     m.appendChild(h('div',{className:'modal-hdr'},h('span',{},isEdit?'Editar Documento':'Novo Documento'),h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')));
     const mb=h('div',{className:'modal-body'});
-    // AI upload section
-    const aiSection=div({background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:16});
-    aiSection.appendChild(div({fontSize:11,fontWeight:700,color:'#1565C0',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:6},'📎  Anexar e analisar com IA'));
-    aiSection.appendChild(div({fontSize:12,color:'#555',marginBottom:10},'Envie o PDF ou foto — a IA lê o nome e data de vencimento automaticamente.'));
-    const aiStatus=div({fontSize:12,fontWeight:700,marginTop:8,display:'none'});
+
+    // PDF.js worker
+    if(window.pdfjsLib)window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    async function extractDateFromPDF(file){
+      if(!window.pdfjsLib||file.type!=='application/pdf')return null;
+      try{
+        const buf=await file.arrayBuffer();
+        const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+        let text='';
+        for(let i=1;i<=Math.min(pdf.numPages,5);i++){
+          const page=await pdf.getPage(i);
+          const tc=await page.getTextContent();
+          text+=tc.items.map(x=>x.str).join(' ')+' ';
+        }
+        const labeled=text.match(/(?:validade|vencimento|v.lido\s+at.|v.lida\s+at.)[:\s]+(\d{2}[\/.\-]\d{2}[\/.\-]\d{4})/i);
+        if(labeled){const p=labeled[1].replace(/[.\-]/g,'/').split('/');return p[2]+'-'+p[1]+'-'+p[0];}
+        const all=[...text.matchAll(/(\d{2})[\/.](\d{2})[\/.](\d{4})/g)];
+        const today=new Date();
+        const future=all.map(m=>{try{return{d:new Date(m[3]+'-'+m[2]+'-'+m[1]),str:m[3]+'-'+m[2]+'-'+m[1]};}catch(e){return null;}}).filter(x=>x&&x.d>today).sort((a,b)=>b.d-a.d);
+        return future.length>0?future[0].str:null;
+      }catch(e){return null;}
+    }
+
+    // Nome com sugestões pré-definidas
+    const nameGroup=h('div',{className:'form-group'});
+    nameGroup.appendChild(h('label',{className:'form-label'},'Nome do Documento'));
+    const nameWrap=h('div',{style:{position:'relative'}});
+    const nameInp=document.createElement('input');
+    nameInp.type='text';nameInp.className='form-inp';
+    nameInp.value=md.name||'';nameInp.placeholder='Selecione ou digite o nome...';nameInp.autocomplete='off';
+    const suggestBox=h('div',{style:{position:'absolute',top:'100%',left:0,right:0,background:'#fff',border:'1px solid #1565C0',maxHeight:'200px',overflowY:'auto',zIndex:100,display:'none',boxShadow:'0 4px 12px rgba(0,0,0,.15)'}});
+    function showSugg(docs){
+      suggestBox.innerHTML='';
+      docs.forEach(doc=>{
+        const item=h('div',{style:{padding:'9px 14px',cursor:'pointer',fontSize:13,borderBottom:'1px solid #F0F0F0',lineHeight:1.4}},
+          h('div',{style:{fontWeight:700,color:'#1A1A1A'}},doc.name),
+          h('div',{style:{fontSize:11,color:'#777',marginTop:2}},freqLabel(doc.frequency)+' · Alerta '+doc.remind+' dias antes')
+        );
+        item.addEventListener('mouseover',()=>item.style.background='#F0F4FF');
+        item.addEventListener('mouseout',()=>item.style.background='#fff');
+        item.addEventListener('mousedown',()=>{
+          nameInp.value=doc.name;md.name=doc.name;
+          md.renewal_frequency=doc.frequency;md.remind_days_before=doc.remind;
+          if(freqSelect)freqSelect.value=doc.frequency;
+          if(remindInp)remindInp.value=String(doc.remind);
+          suggestBox.style.display='none';
+        });
+        suggestBox.appendChild(item);
+      });
+      suggestBox.style.display=docs.length>0?'block':'none';
+    }
+    nameInp.addEventListener('input',e=>{md.name=e.target.value;const q=e.target.value.toLowerCase();showSugg(q?PREDEFINED_DOCS.filter(d=>d.name.toLowerCase().includes(q)):PREDEFINED_DOCS);});
+    nameInp.addEventListener('focus',()=>showSugg(PREDEFINED_DOCS));
+    nameInp.addEventListener('blur',()=>setTimeout(()=>{suggestBox.style.display='none';},200));
+    nameWrap.appendChild(nameInp);nameWrap.appendChild(suggestBox);
+    nameGroup.appendChild(nameWrap);
+    mb.appendChild(nameGroup);
+
+    // File upload com leitura de data
+    const aiSection=h('div',{style:{background:'#F0F4FF',border:'1.5px dashed #1565C0',padding:'14px',marginBottom:0,marginTop:14}});
+    aiSection.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#1565C0',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:6}},'📎  Anexar Documento'));
+    aiSection.appendChild(h('div',{style:{fontSize:12,color:'#555',marginBottom:10}},'Selecione o PDF — o sistema tenta ler a data de vencimento automaticamente.'));
+    const aiStatus=h('div',{style:{fontSize:12,fontWeight:700,marginTop:8,display:'none'}});
     const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='application/pdf,image/*';fileInput.style.display='none';
     const fileBtn=h('button',{className:'btn btn-primary',style:{fontSize:12,padding:'8px 14px'},onClick:()=>fileInput.click()},'📎 Selecionar arquivo');
-    const fileName=div({fontSize:12,color:'#555',marginTop:6,display:'none'});
+    const fileName=h('div',{style:{fontSize:12,color:'#555',marginTop:6,display:'none'}});
     fileInput.addEventListener('change',async e=>{
       const f=e.target.files?.[0];if(!f)return;selectedFile=f;
       fileName.textContent='📄 '+f.name;fileName.style.display='block';
-      // Preenche o nome do documento automaticamente com o nome do arquivo (sem extensão)
-      if(!md.name){
-        const autoName=f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ').replace(/\w/g,c=>c.toUpperCase());
-        md.name=autoName;nameInp.value=autoName;
-      }
-      aiStatus.textContent='📎 Arquivo selecionado! Preencha a data de vencimento e clique em Salvar.';
-      aiStatus.style.color='#2E7D32';aiStatus.style.display='block';
-      fileBtn.textContent='📎 Trocar arquivo';
+      fileBtn.disabled=true;fileBtn.textContent='Lendo...';
+      aiStatus.textContent='⏳ Extraindo data de vencimento...';aiStatus.style.color='#1565C0';aiStatus.style.display='block';
+      const date=await extractDateFromPDF(f);
+      if(date&&expiryInp){expiryInp.value=date;md.expiry_date=date;aiStatus.textContent='✅ Data encontrada! Verifique o campo abaixo.';aiStatus.style.color='#2E7D32';}
+      else{aiStatus.textContent='⚠️ Data não encontrada. Preencha manualmente.';aiStatus.style.color='#B76E00';}
+      fileBtn.disabled=false;fileBtn.textContent='📎 Trocar arquivo';
     });
     aiSection.appendChild(fileBtn);aiSection.appendChild(fileName);aiSection.appendChild(aiStatus);
     mb.appendChild(aiSection);
+
     function fld(label,key,type='text',ph=''){
-      const g=div({className:'form-group'});g.appendChild(h('label',{className:'form-label'},label));
+      const g=h('div',{className:'form-group',style:{marginTop:'14px'}});g.appendChild(h('label',{className:'form-label'},label));
       const el=document.createElement('input');el.type=type;el.className='form-inp';el.value=md[key]||'';if(ph)el.placeholder=ph;
       el.addEventListener('input',e=>{md[key]=e.target.value;});g.appendChild(el);return{g,el};
     }
     function selFld(label,key,opts){
-      const g=div({className:'form-group'});g.appendChild(h('label',{className:'form-label'},label));
+      const g=h('div',{className:'form-group',style:{marginTop:'14px'}});g.appendChild(h('label',{className:'form-label'},label));
       const el=document.createElement('select');el.className='form-select';
       opts.forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(String(md[key])===String(v))o.selected=true;el.appendChild(o);});
       el.addEventListener('change',e=>{md[key]=e.target.value;});g.appendChild(el);return g;
     }
-    const{g:nameG,el:nameInp}=fld('Nome do documento','name','text','Ex: Alvará de Funcionamento');
-    mb.appendChild(nameG);
-    const row1=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'});
+
+    const row1=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'}});
     row1.appendChild(selFld('Unidade','unit_id',[['','— Geral —'],...units.map(u=>[u.id,u.name])]));
-    const{g:expG,el:expEl}=fld('Data de vencimento','expiry_date','date');expiryInp=expEl;row1.appendChild(expG);
+    const{g:expG,el:expEl}=fld('Data de vencimento','expiry_date','date','');expiryInp=expEl;expG.style.marginTop='0';row1.appendChild(expG);
     mb.appendChild(row1);
-    const row2=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'});
-    row2.appendChild(selFld('Frequência','renewal_frequency',[['monthly','Mensal'],['quarterly','Trimestral'],['semi-annual','Semestral'],['annual','Anual'],['custom','Data específica']]));
-    row2.appendChild(fld('Lembrar (dias antes)','remind_days_before','number','30').g);
+
+    const row2=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'}});
+    const freqG=selFld('Frequência de renovação','renewal_frequency',[['monthly','Mensal'],['quarterly','Trimestral'],['semi-annual','Semestral'],['annual','Anual'],['custom','Outra / Trienal']]);
+    freqG.style.marginTop='0';freqSelect=freqG.querySelector('select');row2.appendChild(freqG);
+    const{g:remG,el:remEl}=fld('Lembrar (dias antes)','remind_days_before','number','30');remindInp=remEl;remG.style.marginTop='0';row2.appendChild(remG);
     mb.appendChild(row2);
-    const gNotes=div({className:'form-group',style:{marginTop:'14px'}});
+
+    const gNotes=h('div',{className:'form-group',style:{marginTop:'14px'}});
     gNotes.appendChild(h('label',{className:'form-label'},'Observações'));
     const taNotes=document.createElement('textarea');taNotes.className='form-inp';taNotes.rows=2;taNotes.value=md.notes||'';taNotes.addEventListener('input',e=>{md.notes=e.target.value;});
     gNotes.appendChild(taNotes);mb.appendChild(gNotes);
-    if(md.file_url)mb.appendChild(div({fontSize:12,color:'#1565C0',marginTop:8},h('a',{href:md.file_url,target:'_blank',style:{color:'#1565C0'}},'📎 Ver documento anexado')));
+    if(md.file_url)mb.appendChild(h('div',{style:{fontSize:12,color:'#1565C0',marginTop:8}},h('a',{href:md.file_url,target:'_blank',style:{color:'#1565C0'}},'📎 Ver documento anexado')));
+
     m.appendChild(mb);
     m.appendChild(h('div',{className:'modal-footer'},
       h('button',{className:'btn btn-gray',onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
@@ -1561,25 +1641,12 @@ function renderDocuments(){
         let fileUrl=md.file_url||null;
         if(selectedFile){
           try{
-            // Tenta fazer upload no Supabase Storage
             const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
             const path='documents/'+Date.now()+'_'+safeName;
-            const{error:upErr,data:upData}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true,contentType:selectedFile.type});
-            if(upErr){
-              console.error('Upload error:',upErr);
-              // Fallback: salva como base64 se o arquivo for pequeno (< 500kb)
-              if(selectedFile.size<500000){
-                const b64=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(selectedFile);});
-                fileUrl=b64;
-              } else {
-                ss({saving:false,error:'Erro no upload: '+upErr.message+'. Arquivo muito grande. Tente com um arquivo menor.'});
-                return;
-              }
-            } else {
-              const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);
-              fileUrl=publicUrl;
-            }
-          }catch(e){console.error('Upload exception:',e);}
+            const{error:upErr}=await sb.storage.from('photos').upload(path,selectedFile,{upsert:true,contentType:selectedFile.type});
+            if(upErr){alert('Erro no upload: '+upErr.message);ss({saving:false});return;}
+            const{data:{publicUrl}}=sb.storage.from('photos').getPublicUrl(path);fileUrl=publicUrl;
+          }catch(upEx){alert('Erro: '+upEx.message);ss({saving:false});return;}
         }
         const data={name:md.name,unit_id:md.unit_id||null,expiry_date:md.expiry_date,renewal_frequency:md.renewal_frequency||'annual',remind_days_before:Number(md.remind_days_before)||30,notes:md.notes||null,file_url:fileUrl,status:'active',company_id:COMPANY_ID};
         if(isEdit){await sb.from('documents').update(data).eq('id',md.id);}else{await sb.from('documents').insert(data);}
@@ -1592,7 +1659,6 @@ function renderDocuments(){
   return frag;
 }
 
-// ── SETTINGS TAB ──────────────────────────────────────────────────────────
 function renderSettings(){
   const {saving,error,success}=state;
   const frag=document.createDocumentFragment();
