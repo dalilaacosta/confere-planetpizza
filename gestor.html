@@ -685,6 +685,10 @@ function renderUnits(){
     tbody.appendChild(h('tr',{},h('td',{colSpan:4,style:{textAlign:'center',color:'#999',padding:'24px'}},'Nenhuma unidade cadastrada.')));
   }
 
+  // Tag rows with doc name for search filtering
+  Array.from(tbody.rows).forEach((row,i)=>{
+    if(i<sortedPresets.length)row.setAttribute('data-docname',sortedPresets[i].name.toLowerCase());
+  });
   tbl.appendChild(tbody);frag.appendChild(tbl);
 
   // Modal unidade
@@ -1145,7 +1149,11 @@ function renderDocuments(){
         )
       ));
     });
-    tbl.appendChild(tbody);frag.appendChild(tbl);
+    // Tag rows with doc name for search filtering
+  Array.from(tbody.rows).forEach((row,i)=>{
+    if(i<sortedPresets.length)row.setAttribute('data-docname',sortedPresets[i].name.toLowerCase());
+  });
+  tbl.appendChild(tbody);frag.appendChild(tbl);
     frag.appendChild(div({height:'16px'}));
   });
 
@@ -1518,6 +1526,29 @@ function renderDocuments(){
   });
   frag.appendChild(kgrid);
 
+  // ── BUSCA + BOTÃO ─────────────────────────────────────────────────────────
+  frag.appendChild(h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:'10px'}},
+    h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:'13px'},
+      onClick:()=>ss({modal:'document',modalData:{remind_days_before:30,renewal_frequency:'annual',unit_id:state.selectedUnit?.id||null}})},'+ Novo Documento')
+  ));
+  const searchWrap=h('div',{style:{background:'#fff',border:'1px solid #D0D0D0',padding:'10px 14px',marginBottom:'0',display:'flex',alignItems:'center',gap:10}});
+  const searchIcon=h('span',{style:{fontSize:'16px',color:'#999',flexShrink:0}},'🔍');
+  const searchInp=document.createElement('input');
+  searchInp.type='text';searchInp.className='search-inp';
+  searchInp.placeholder='Buscar documento...';
+  searchInp.style.padding='8px 12px 8px 12px';
+  let searchQuery='';
+  searchInp.addEventListener('input',e=>{
+    searchQuery=e.target.value.toLowerCase().trim();
+    document.querySelectorAll('tr[data-docname]').forEach(row=>{
+      const name=(row.getAttribute('data-docname')||'').toLowerCase();
+      row.style.display=!searchQuery||name.includes(searchQuery)?'':'none';
+    });
+  });
+  searchWrap.appendChild(searchIcon);
+  searchWrap.appendChild(searchInp);
+  frag.appendChild(searchWrap);
+
   // ── LISTA PADRÃO ─────────────────────────────────────────────────────────
   frag.appendChild(sec('📋  Documentos Obrigatórios — '+PREDEFINED_DOCS.length+' itens'));
   const tbl=h('table',{style:{width:'100%',borderCollapse:'collapse',background:'#fff',border:'1px solid #D0D0D0',borderTop:'none',tableLayout:'fixed'}});
@@ -1528,7 +1559,7 @@ function renderDocuments(){
     h('th',{style:{...thS,width:'100px'}},'Status'),
     h('th',{style:{...thS,width:'210px',textAlign:'right'}},'Ações')
   )));
-  const tbody=h('tbody',{});
+  const tbody=h('tbody',{});let tblBody=tbody,tblBody2=null;
 
   sortedPresets.forEach((preset,i)=>{
     const doc=findDoc(preset.name);
@@ -1571,6 +1602,10 @@ function renderDocuments(){
     }
   });
 
+  // Tag rows with doc name for search filtering
+  Array.from(tbody.rows).forEach((row,i)=>{
+    if(i<sortedPresets.length)row.setAttribute('data-docname',sortedPresets[i].name.toLowerCase());
+  });
   tbl.appendChild(tbody);frag.appendChild(tbl);
   frag.appendChild(h('div',{style:{height:'20px'}}));
 
@@ -1616,10 +1651,7 @@ function renderDocuments(){
     tbl2.appendChild(tbody2);frag.appendChild(tbl2);
   }
 
-  frag.appendChild(h('div',{style:{textAlign:'right',marginBottom:'16px'}},
-    h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:'13px'},
-      onClick:()=>ss({modal:'document',modalData:{remind_days_before:30,renewal_frequency:'annual',unit_id:state.selectedUnit?.id||null}})},'+ Novo Documento')
-  ));
+
 
   // Modal documento
   if(modal==='document'){
