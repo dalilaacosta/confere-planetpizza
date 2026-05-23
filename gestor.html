@@ -1484,6 +1484,21 @@ function renderDocuments(){
   // Match each predefined doc to a cadastrated document (by name)
   function findDoc(name){return documents.find(d=>d.name.trim().toLowerCase()===name.trim().toLowerCase());}
 
+  // Sort: expired first, then expiring, then ok, then not registered. Within each group: alphabetical
+  function docPriority(preset){
+    const doc=findDoc(preset.name);
+    if(!doc)return 4;
+    const st=docStatus(doc);
+    if(st.days<0)return 1;
+    if(st.days<=doc.remind_days_before)return 2;
+    return 3;
+  }
+  const sortedPresets=[...PREDEFINED_DOCS].sort((a,b)=>{
+    const pa=docPriority(a),pb=docPriority(b);
+    if(pa!==pb)return pa-pb;
+    return a.name.localeCompare(b.name,'pt-BR');
+  });
+
   // KPIs
   const vencidos=PREDEFINED_DOCS.filter(p=>{const d=findDoc(p.name);return d&&docStatus(d).days<0;}).length;
   const vencendo=PREDEFINED_DOCS.filter(p=>{const d=findDoc(p.name);return d&&docStatus(d).days>=0&&docStatus(d).days<=d.remind_days_before;}).length;
@@ -1505,30 +1520,31 @@ function renderDocuments(){
 
   // ── LISTA PADRÃO ─────────────────────────────────────────────────────────
   frag.appendChild(sec('📋  Documentos Obrigatórios — '+PREDEFINED_DOCS.length+' itens'));
-  const tbl=h('table',{style:{width:'100%',borderCollapse:'collapse',background:'#fff',border:'1px solid #D0D0D0',borderTop:'none'}});
+  const tbl=h('table',{style:{width:'100%',borderCollapse:'collapse',background:'#fff',border:'1px solid #D0D0D0',borderTop:'none',tableLayout:'fixed'}});
+  const thS={padding:'8px 12px',textAlign:'left',fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',borderBottom:'1px solid #D0D0D0',background:'#F5F5F5'};
   tbl.appendChild(h('thead',{},h('tr',{},
-    h('th',{style:{padding:'9px 14px',textAlign:'left',fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',borderBottom:'1px solid #D0D0D0',background:'#F5F5F5'}},'Documento'),
-    h('th',{style:{padding:'9px 14px',textAlign:'left',fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',borderBottom:'1px solid #D0D0D0',background:'#F5F5F5',width:'120px'}},'Vencimento'),
-    h('th',{style:{padding:'9px 14px',textAlign:'left',fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',borderBottom:'1px solid #D0D0D0',background:'#F5F5F5',width:'100px'}},'Status'),
-    h('th',{style:{padding:'9px 14px',textAlign:'left',fontSize:'11px',fontWeight:'700',color:'#555',letterSpacing:'.06em',textTransform:'uppercase',borderBottom:'1px solid #D0D0D0',background:'#F5F5F5',width:'180px'}},'Ações')
+    h('th',{style:{...thS}},'Documento'),
+    h('th',{style:{...thS,width:'110px',whiteSpace:'nowrap'}},'Vencimento'),
+    h('th',{style:{...thS,width:'100px'}},'Status'),
+    h('th',{style:{...thS,width:'210px',textAlign:'right'}},'Ações')
   )));
   const tbody=h('tbody',{});
 
-  PREDEFINED_DOCS.forEach((preset,i)=>{
+  sortedPresets.forEach((preset,i)=>{
     const doc=findDoc(preset.name);
-    const isLast=i===PREDEFINED_DOCS.length-1;
+    const isLast=i===sortedPresets.length-1;
     const rowStyle={borderBottom:isLast?'none':'1px solid #F0F0F0'};
 
     if(doc){
       const st=docStatus(doc);
       const rowBg=st.days<0?'#FFF8F8':st.days<=doc.remind_days_before?'#FFFDF0':'#fff';
       tbody.appendChild(h('tr',{style:{background:rowBg}},
-        h('td',{style:{padding:'10px 14px',fontWeight:'600',color:'#1A1A1A',...rowStyle}},preset.name),
-        h('td',{style:{padding:'10px 14px',fontWeight:'700',color:st.color,fontSize:'13px',...rowStyle}},
+        h('td',{style:{padding:'8px 12px',fontWeight:'600',color:'#1A1A1A',...rowStyle}},preset.name),
+        h('td',{style:{padding:'8px 12px',fontWeight:'700',color:st.color,fontSize:'13px',whiteSpace:'nowrap',...rowStyle}},
           new Date(doc.expiry_date).toLocaleDateString('pt-BR')),
-        h('td',{style:{padding:'10px 14px',...rowStyle}},
+        h('td',{style:{padding:'8px 12px',...rowStyle}},
           h('span',{className:'tag '+st.cls},st.label)),
-        h('td',{style:{padding:'10px 14px',...rowStyle}},
+        h('td',{style:{padding:'8px 12px',whiteSpace:'nowrap',textAlign:'right',...rowStyle}},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'document',modalData:{...doc}})},'Editar'),
           doc.file_url?h('a',{href:doc.file_url,target:'_blank',style:{display:'inline-block',marginRight:3,padding:'5px 9px',background:'#0D7390',color:'#fff',fontSize:11,fontWeight:700,textDecoration:'none'}},'📎 Ver'):'',
           h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{
@@ -1545,11 +1561,11 @@ function renderDocuments(){
     } else {
       // Not registered yet
       tbody.appendChild(h('tr',{style:{background:'#FAFAFA'}},
-        h('td',{style:{padding:'10px 14px',color:'#555',...rowStyle}},preset.name),
-        h('td',{style:{padding:'10px 14px',color:'#BBB',fontSize:'12px',...rowStyle}},'—'),
-        h('td',{style:{padding:'10px 14px',...rowStyle}},
+        h('td',{style:{padding:'8px 12px',color:'#555',...rowStyle}},preset.name),
+        h('td',{style:{padding:'8px 12px',color:'#BBB',fontSize:'12px',...rowStyle}},'—'),
+        h('td',{style:{padding:'8px 12px',...rowStyle}},
           h('span',{style:{fontSize:'10px',fontWeight:'700',padding:'3px 8px',background:'#ECEFF1',color:'#546E7A',letterSpacing:'.04em'}},'NÃO CADASTRADO')),
-        h('td',{style:{padding:'10px 14px',...rowStyle}},
+        h('td',{style:{padding:'8px 12px',whiteSpace:'nowrap',textAlign:'right',...rowStyle}},
           h('button',{className:'btn btn-success btn-sm',onClick:()=>ss({modal:'document',modalData:{name:preset.name,renewal_frequency:preset.frequency,remind_days_before:preset.remind,active:true,unit_id:state.selectedUnit?.id||null}})},'+ Cadastrar'))
       ));
     }
