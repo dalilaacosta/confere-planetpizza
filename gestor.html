@@ -529,12 +529,6 @@ function docStatus(doc){
   return{label:'EM DIA',days:diffDays,cls:'tag-green',color:'#2E7D32',bg:'#E8F5E9'};
 }
 
-function sec(title,btnLabel,btnFn){
-  const d=h('div',{style:{background:'#1A237E',padding:'8px 14px',marginBottom:0,display:'flex',alignItems:'center',justifyContent:'space-between'}});
-  d.appendChild(h('span',{style:{color:'#fff',fontSize:'11px',fontWeight:'700',letterSpacing:'.08em',textTransform:'uppercase'}},title));
-  if(btnLabel&&btnFn)d.appendChild(h('button',{className:'btn',style:{background:'rgba(255,255,255,.2)',border:'none',color:'#fff',fontSize:'11px',fontWeight:'700',padding:'3px 10px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:btnFn},btnLabel));
-  return d;
-}
 function freqLabel(f){return{monthly:'Mensal',quarterly:'Trimestral','semi-annual':'Semestral',annual:'Anual',custom:'Data específica'}[f]||f;}
 
 // ── TAB: OVERVIEW ─────────────────────────────────────────────────────────
@@ -1837,4 +1831,31 @@ function renderDashboard(){
   return frag;
 }
 
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render(){
+  const root=document.getElementById('root');
+  root.innerHTML='';
+  if(!SESSION){window.location.href='login.html';return;}
+  let c;
+  try{
+    if(state.screen==='unit_select'){c=renderUnitSelect();}
+    else if(state.screen==='dashboard'){c=renderDashboard();}
+    else{
+      const wrap=h('div',{style:{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',background:'#F4F6F9'}});
+      wrap.appendChild(h('div',{className:'spinner'}));
+      c=wrap;
+    }
+  }catch(err){
+    const errDiv=document.createElement('div');
+    errDiv.style.cssText='padding:32px;color:#C62828;font-family:Roboto,sans-serif;font-size:14px;';
+    errDiv.innerHTML='<strong>Erro ao renderizar:</strong><br>'+err.message+'<br><br><button onclick="window.location.reload()" style="background:#1565C0;color:#fff;border:none;padding:10px 20px;cursor:pointer;font-family:Roboto,sans-serif;font-weight:700">Recarregar</button>';
+    c=errDiv;
+  }
+  if(c)root.appendChild(c);
+}
 
+render();
+init();
+</script>
+</body>
+</html>
