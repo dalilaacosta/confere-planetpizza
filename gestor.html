@@ -1527,16 +1527,13 @@ function renderDocuments(){
   frag.appendChild(kgrid);
 
   // ── BUSCA + BOTÃO ─────────────────────────────────────────────────────────
-  frag.appendChild(h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:'10px'}},
-    h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:'13px'},
-      onClick:()=>ss({modal:'document',modalData:{remind_days_before:30,renewal_frequency:'annual',unit_id:state.selectedUnit?.id||null}})},'+ Novo Documento')
-  ));
-  const searchWrap=h('div',{style:{background:'#fff',border:'1px solid #D0D0D0',padding:'10px 14px',marginBottom:'0',display:'flex',alignItems:'center',gap:10}});
+  const topBar2=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:'0'}});
+  const searchWrap=h('div',{style:{background:'#fff',border:'1px solid #D0D0D0',padding:'8px 12px',flex:1,display:'flex',alignItems:'center',gap:8}});
   const searchIcon=h('span',{style:{fontSize:'16px',color:'#999',flexShrink:0}},'🔍');
   const searchInp=document.createElement('input');
   searchInp.type='text';searchInp.className='search-inp';
   searchInp.placeholder='Buscar documento...';
-  searchInp.style.padding='8px 12px 8px 12px';
+  searchInp.style.padding='6px 10px';
   let searchQuery='';
   searchInp.addEventListener('input',e=>{
     searchQuery=e.target.value.toLowerCase().trim();
@@ -1547,7 +1544,10 @@ function renderDocuments(){
   });
   searchWrap.appendChild(searchIcon);
   searchWrap.appendChild(searchInp);
-  frag.appendChild(searchWrap);
+  topBar2.appendChild(searchWrap);
+  topBar2.appendChild(h('button',{className:'btn btn-primary',style:{padding:'10px 20px',fontSize:'13px',flexShrink:0},
+    onClick:()=>ss({modal:'document',modalData:{remind_days_before:30,renewal_frequency:'annual',unit_id:state.selectedUnit?.id||null}})},'+ Novo Documento'));
+  frag.appendChild(topBar2);
 
   // ── LISTA PADRÃO ─────────────────────────────────────────────────────────
   frag.appendChild(sec('📋  Documentos Obrigatórios — '+PREDEFINED_DOCS.length+' itens'));
