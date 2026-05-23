@@ -200,16 +200,16 @@ body{background:#EBEBEB;font-family:'Roboto',sans-serif;min-height:100vh;font-si
   .kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
   .kpi-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
   /* ── SECTION CARDS ──────────────────────────────── */
-  .sec-card{background:#fff;border-radius:12px;border:0.5px solid #E0E0E0;padding:16px;margin-bottom:16px;}
+  .sec-card{background:#fff;border-radius:12px;border:0.5px solid #E0E0E0;padding:20px 22px;margin-bottom:16px;}
   .sec-card-title{font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
   /* ── PROGRESS BAR ───────────────────────────────── */
   .prog-bar{height:6px;background:#EEE;border-radius:99px;overflow:hidden;margin-top:8px;}
   .prog-bar-fill{height:100%;border-radius:99px;}
   /* ── ALERT CARDS ────────────────────────────────── */
-  .alert-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:8px;font-size:13px;}
+  .alert-item{display:flex;align-items:center;gap:12px;padding:14px 14px;border-radius:8px;margin-bottom:10px;font-size:13px;}
   .alert-item:last-child{margin-bottom:0;}
   /* ── FEED ───────────────────────────────────────── */
-  .feed-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0F0F0;font-size:13px;}
+  .feed-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #F0F0F0;font-size:13px;}
   .feed-item:last-child{border-bottom:none;}
   .feed-item .time{font-size:11px;color:#999;flex-shrink:0;margin-left:auto;}
   /* ── AVATAR ─────────────────────────────────────── */
@@ -623,9 +623,9 @@ function renderOverview(){
   const avatarColors=[['#B5D4F4','#0C447C'],['#C0DD97','#27500A'],['#F4C0D1','#72243E'],['#FAC775','#633806'],['#9FE1CB','#085041']];
   topOps.forEach((op,i)=>{
     const [bg,fg]=avatarColors[i%5];
-    const row=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}});
+    const row=h('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:14,padding:'6px 0',borderBottom:'1px solid #F5F5F5'}});
     row.appendChild(h('span',{style:{fontSize:16,width:20,textAlign:'center',flexShrink:0}},medals[i]));
-    const av=h('div',{className:'avatar',style:{background:bg,color:fg}},op.initials||op.name.substring(0,2).toUpperCase());
+    const av=h('div',{className:'avatar',style:{background:bg,color:fg,width:'34px',height:'34px',fontSize:'12px'}},op.initials||op.name.substring(0,2).toUpperCase());
     row.appendChild(av);
     row.appendChild(h('span',{style:{flex:1,fontSize:13,color:'#1A1A1A'}},op.name));
     const badge=h('span',{style:{fontSize:13,fontWeight:700,color:'#1A237E'}},op.done+' ✓');
@@ -1780,7 +1780,7 @@ function renderDashboard(){
   // ── TOP BAR ─────────────────────────────────────────────────────────────
   const topBar=h('div',{style:{background:'#0D7390',padding:'0 20px',height:'52px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:50}});
   const logoDiv=h('div',{style:{display:'flex',alignItems:'center',gap:12}});
-  logoDiv.appendChild(h('img',{src:'logo.png',style:{height:'28px'},onerror:"this.style.display='none'"}));
+  logoDiv.appendChild(h('img',{src:'logo.png',style:{height:'28px'},onerror:function(){this.style.display='none';}}));
   const logoText=h('span',{style:{color:'#fff',fontSize:'18px',fontWeight:'700',letterSpacing:'-.3px'}});
   logoText.innerHTML='Confere<span style="color:#7EEEDD">Ops</span>';
   logoDiv.appendChild(logoText);
