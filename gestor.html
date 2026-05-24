@@ -1287,18 +1287,26 @@ function renderSettings(){
 
   // ── ACESSO DOS OPERADORES ─────────────────────────────────────────────────
   const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/');
-  const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'20px',marginBottom:16}});
-  accessCard.appendChild(h('div',{style:{fontSize:13,fontWeight:700,color:'#1A1A1A',marginBottom:4}},'📱 Acesso dos Operadores'));
-  accessCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:16}},'Compartilhe o QR Code ou o link abaixo com sua equipe. O operador escaneia e já cai direto no app.'));
+  const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'24px',marginBottom:16}});
+  const accessCardTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
+  accessCardTitle.appendChild(h('div',{style:{width:36,height:36,background:'#E8F4F8',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}},'📱'));
+  const accessCardText=h('div',{});
+  accessCardText.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#1A1A1A'}},'Acesso dos Operadores'));
+  accessCardText.appendChild(h('div',{style:{fontSize:12,color:'#888',marginTop:2}},'Compartilhe com sua equipe para acessar os checklists'));
+  accessCardTitle.appendChild(accessCardText);
+  accessCard.appendChild(accessCardTitle);
+  accessCard.appendChild(h('div',{style:{height:1,background:'#F0F0F0',margin:'16px 0'}}));
 
   // QR Code + link side by side
   const accessRow=h('div',{style:{display:'flex',gap:20,alignItems:'flex-start',flexWrap:'wrap'}});
 
   // QR Code
   const qrBox=h('div',{style:{textAlign:'center',flexShrink:0}});
-  const qrImg=h('img',{src:'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(operatorUrl)+'&bgcolor=ffffff&color=1A237E&margin=8',style:{width:160,height:160,border:'4px solid #1A237E',borderRadius:8},alt:'QR Code'});
-  qrBox.appendChild(qrImg);
-  qrBox.appendChild(h('div',{style:{fontSize:11,color:'#888',marginTop:6}},'Escanear para acessar'));
+  const qrWrap=h('div',{style:{background:'#F7F9FC',borderRadius:12,padding:12,display:'inline-block',border:'1px solid #E0E0E0'}});
+  const qrImg=h('img',{src:'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(operatorUrl)+'&bgcolor=F7F9FC&color=1A237E&margin=4',style:{width:160,height:160,display:'block',borderRadius:4},alt:'QR Code'});
+  qrWrap.appendChild(qrImg);
+  qrBox.appendChild(qrWrap);
+  qrBox.appendChild(h('div',{style:{fontSize:11,color:'#888',marginTop:8,fontWeight:600}},'Escanear para acessar'));
   const printBtn=h('button',{className:'btn',style:{marginTop:8,background:'#1A237E',color:'#fff',fontSize:11,padding:'6px 14px',width:'100%',borderRadius:6,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{
     const w=window.open('','_blank');
     w.document.write('<html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Roboto,sans-serif;gap:12px;"><h2 style="color:#1A237E;margin:0">'+( state.companyData?.nome_fantasia||'ConfereOps')+'</h2><p style="color:#555;margin:0">Escaneie para acessar o app</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(operatorUrl)+'&bgcolor=ffffff&color=1A237E&margin=10" style="width:300px;height:300px"/><p style="color:#888;font-size:12px">'+operatorUrl+'</p></body></html>');
@@ -1308,31 +1316,31 @@ function renderSettings(){
   accessRow.appendChild(qrBox);
 
   // Link + instructions
-  const infoBox=h('div',{style:{flex:1,minWidth:220}});
-  infoBox.appendChild(h('div',{style:{fontSize:12,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}},'Link do App'));
-  const linkRow=h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:16}});
+  const infoBox=h('div',{style:{flex:1,minWidth:220,display:'flex',flexDirection:'column',gap:0}});
+  infoBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}},'Link do App'));
+  const linkRow=h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:20,background:'#F7F9FC',border:'1px solid #E0E0E0',borderRadius:10,padding:'10px 12px'}});
   const linkInp=document.createElement('input');
-  linkInp.type='text';linkInp.className='form-inp';
-  linkInp.value=operatorUrl;linkInp.readOnly=true;
-  linkInp.style.fontSize='12px';linkInp.style.color='#1A237E';linkInp.style.fontWeight='600';
-  const copyBtn=h('button',{className:'btn',style:{background:'#0D7390',color:'#fff',padding:'10px 14px',fontSize:12,borderRadius:6,flexShrink:0,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{
+  linkInp.type='text';linkInp.readOnly=true;
+  linkInp.value=operatorUrl;
+  Object.assign(linkInp.style,{border:'none',background:'transparent',flex:1,fontSize:12,color:'#1A237E',fontWeight:600,outline:'none',fontFamily:"'Roboto',sans-serif",overflow:'hidden',textOverflow:'ellipsis'});
+  const copyBtn=h('button',{style:{background:'#0D7390',color:'#fff',padding:'7px 14px',fontSize:12,borderRadius:7,flexShrink:0,cursor:'pointer',border:'none',fontFamily:"'Roboto',sans-serif",fontWeight:700},onClick:()=>{
     navigator.clipboard.writeText(operatorUrl).then(()=>{copyBtn.textContent='✓ Copiado!';setTimeout(()=>copyBtn.textContent='Copiar',2000);});
   }},'Copiar');
   linkRow.appendChild(linkInp);linkRow.appendChild(copyBtn);
   infoBox.appendChild(linkRow);
 
   // Steps guide
-  infoBox.appendChild(h('div',{style:{fontSize:12,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}},'Como funciona'));
+  infoBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}},'Como funciona'));
   const steps=[
-    ['1','Gestor cadastra os operadores com nome e PIN nesta tela'],
-    ['2','Operador escaneia o QR Code ou acessa o link'],
-    ['3','Operador busca o próprio nome e digita o PIN'],
-    ['4','Operador executa os checklists do dia'],
+    ['1','#0D7390','Gestor cadastra operadores com nome e PIN'],
+    ['2','#1A237E','Operador escaneia o QR Code ou acessa o link'],
+    ['3','#3949AB','Busca o nome e digita o PIN'],
+    ['4','#2E7D32','Executa os checklists do dia'],
   ];
-  steps.forEach(([n,txt])=>{
-    const step=h('div',{style:{display:'flex',gap:10,alignItems:'flex-start',marginBottom:8}});
-    step.appendChild(h('div',{style:{width:22,height:22,borderRadius:'50%',background:'#1A237E',color:'#fff',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},n));
-    step.appendChild(h('div',{style:{fontSize:12,color:'#444',lineHeight:1.5}},txt));
+  steps.forEach(([n,c,txt])=>{
+    const step=h('div',{style:{display:'flex',gap:12,alignItems:'center',marginBottom:10,padding:'8px 12px',background:'#F7F9FC',borderRadius:8}});
+    step.appendChild(h('div',{style:{width:26,height:26,borderRadius:'50%',background:c,color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},n));
+    step.appendChild(h('div',{style:{fontSize:13,color:'#444',lineHeight:1.4}},txt));
     infoBox.appendChild(step);
   });
   accessRow.appendChild(infoBox);
@@ -1350,20 +1358,29 @@ function renderSettings(){
     {done:true,label:'Compartilhar acesso com a equipe',sub:'Use o QR Code acima',link:null},
   ];
   const stepsCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'20px',marginBottom:16}});
-  stepsCard.appendChild(h('div',{style:{fontSize:13,fontWeight:700,color:'#1A1A1A',marginBottom:4}},'🚀 Primeiros Passos'));
+  const stepsTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
+  stepsTitle.appendChild(h('div',{style:{width:36,height:36,background:'#EEF2FF',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}},'🚀'));
+  const stepsTitleText=h('div',{});
+  stepsTitleText.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#1A1A1A'}},'Primeiros Passos'));
+  stepsTitleText.appendChild(h('div',{style:{fontSize:12,color:'#888',marginTop:2}},'Configure sua conta para começar a usar'));
+  stepsTitle.appendChild(stepsTitleText);
+  stepsCard.appendChild(stepsTitle);
+  stepsCard.appendChild(h('div',{style:{height:1,background:'#F0F0F0',margin:'14px 0'}}));
   const doneCount=steps2.filter(s=>s.done).length;
-  stepsCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:12}},doneCount+' de '+steps2.length+' etapas concluídas'));
+  stepsCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:8}},doneCount+' de '+steps2.length+' etapas concluídas'));
   const progBar=h('div',{style:{height:6,background:'#EEE',borderRadius:99,overflow:'hidden',marginBottom:16}});
   progBar.appendChild(h('div',{style:{height:'100%',background:'#2E7D32',borderRadius:99,width:(doneCount/steps2.length*100)+'%',transition:'width .3s'}}));
   stepsCard.appendChild(progBar);
   steps2.forEach(step=>{
-    const row=h('div',{style:{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #F5F5F5',cursor:step.link?'pointer':'default'},onClick:step.link?()=>ss({tab:step.link}):null});
-    row.appendChild(h('div',{style:{width:28,height:28,borderRadius:'50%',background:step.done?'#E8F5E9':'#F5F5F5',border:`2px solid ${step.done?'#2E7D32':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}},step.done?'✓':'○'));
-    const info=h('div',{style:{flex:1}});
-    info.appendChild(h('div',{style:{fontSize:13,fontWeight:step.done?400:600,color:step.done?'#888':'#1A1A1A',textDecoration:step.done?'line-through':'none'}},step.label));
-    info.appendChild(h('div',{style:{fontSize:11,color:step.done?'#2E7D32':'#999',marginTop:2}},step.sub));
+    const row=h('div',{style:{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:'1px solid #F5F5F5',cursor:step.link?'pointer':'default',transition:'background .12s'},onClick:step.link?()=>ss({tab:step.link}):null});
+    if(step.link){row.addEventListener('mouseover',()=>row.style.background='#F7F9FC');row.addEventListener('mouseout',()=>row.style.background='transparent');}
+    const checkCircle=h('div',{style:{width:32,height:32,borderRadius:'50%',background:step.done?'#2E7D32':'#F5F5F5',border:`2px solid ${step.done?'#2E7D32':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,color:step.done?'#fff':'#CCC',fontWeight:700}},step.done?'✓':'·');
+    row.appendChild(checkCircle);
+    const info=h('div',{style:{flex:1,minWidth:0}});
+    info.appendChild(h('div',{style:{fontSize:13,fontWeight:600,color:step.done?'#999':'#1A1A1A',textDecoration:step.done?'line-through':'none',marginBottom:2}},step.label));
+    info.appendChild(h('div',{style:{fontSize:12,color:step.done?'#2E7D32':'#999'}},step.sub));
     row.appendChild(info);
-    if(step.link)row.appendChild(h('span',{style:{color:'#999',fontSize:14}},'›'));
+    if(step.link)row.appendChild(h('i',{className:'ti ti-chevron-right','aria-hidden':'true',style:{color:'#CCC',fontSize:16,flexShrink:0}}));
     stepsCard.appendChild(row);
   });
   frag.appendChild(stepsCard);
@@ -1829,18 +1846,26 @@ function renderSettings(){
 
   // ── ACESSO DOS OPERADORES ─────────────────────────────────────────────────
   const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/');
-  const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'20px',marginBottom:16}});
-  accessCard.appendChild(h('div',{style:{fontSize:13,fontWeight:700,color:'#1A1A1A',marginBottom:4}},'📱 Acesso dos Operadores'));
-  accessCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:16}},'Compartilhe o QR Code ou o link abaixo com sua equipe. O operador escaneia e já cai direto no app.'));
+  const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'24px',marginBottom:16}});
+  const accessCardTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
+  accessCardTitle.appendChild(h('div',{style:{width:36,height:36,background:'#E8F4F8',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}},'📱'));
+  const accessCardText=h('div',{});
+  accessCardText.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#1A1A1A'}},'Acesso dos Operadores'));
+  accessCardText.appendChild(h('div',{style:{fontSize:12,color:'#888',marginTop:2}},'Compartilhe com sua equipe para acessar os checklists'));
+  accessCardTitle.appendChild(accessCardText);
+  accessCard.appendChild(accessCardTitle);
+  accessCard.appendChild(h('div',{style:{height:1,background:'#F0F0F0',margin:'16px 0'}}));
 
   // QR Code + link side by side
   const accessRow=h('div',{style:{display:'flex',gap:20,alignItems:'flex-start',flexWrap:'wrap'}});
 
   // QR Code
   const qrBox=h('div',{style:{textAlign:'center',flexShrink:0}});
-  const qrImg=h('img',{src:'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(operatorUrl)+'&bgcolor=ffffff&color=1A237E&margin=8',style:{width:160,height:160,border:'4px solid #1A237E',borderRadius:8},alt:'QR Code'});
-  qrBox.appendChild(qrImg);
-  qrBox.appendChild(h('div',{style:{fontSize:11,color:'#888',marginTop:6}},'Escanear para acessar'));
+  const qrWrap=h('div',{style:{background:'#F7F9FC',borderRadius:12,padding:12,display:'inline-block',border:'1px solid #E0E0E0'}});
+  const qrImg=h('img',{src:'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(operatorUrl)+'&bgcolor=F7F9FC&color=1A237E&margin=4',style:{width:160,height:160,display:'block',borderRadius:4},alt:'QR Code'});
+  qrWrap.appendChild(qrImg);
+  qrBox.appendChild(qrWrap);
+  qrBox.appendChild(h('div',{style:{fontSize:11,color:'#888',marginTop:8,fontWeight:600}},'Escanear para acessar'));
   const printBtn=h('button',{className:'btn',style:{marginTop:8,background:'#1A237E',color:'#fff',fontSize:11,padding:'6px 14px',width:'100%',borderRadius:6,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{
     const w=window.open('','_blank');
     w.document.write('<html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Roboto,sans-serif;gap:12px;"><h2 style="color:#1A237E;margin:0">'+( state.companyData?.nome_fantasia||'ConfereOps')+'</h2><p style="color:#555;margin:0">Escaneie para acessar o app</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(operatorUrl)+'&bgcolor=ffffff&color=1A237E&margin=10" style="width:300px;height:300px"/><p style="color:#888;font-size:12px">'+operatorUrl+'</p></body></html>');
@@ -1850,31 +1875,31 @@ function renderSettings(){
   accessRow.appendChild(qrBox);
 
   // Link + instructions
-  const infoBox=h('div',{style:{flex:1,minWidth:220}});
-  infoBox.appendChild(h('div',{style:{fontSize:12,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}},'Link do App'));
-  const linkRow=h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:16}});
+  const infoBox=h('div',{style:{flex:1,minWidth:220,display:'flex',flexDirection:'column',gap:0}});
+  infoBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}},'Link do App'));
+  const linkRow=h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:20,background:'#F7F9FC',border:'1px solid #E0E0E0',borderRadius:10,padding:'10px 12px'}});
   const linkInp=document.createElement('input');
-  linkInp.type='text';linkInp.className='form-inp';
-  linkInp.value=operatorUrl;linkInp.readOnly=true;
-  linkInp.style.fontSize='12px';linkInp.style.color='#1A237E';linkInp.style.fontWeight='600';
-  const copyBtn=h('button',{className:'btn',style:{background:'#0D7390',color:'#fff',padding:'10px 14px',fontSize:12,borderRadius:6,flexShrink:0,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{
+  linkInp.type='text';linkInp.readOnly=true;
+  linkInp.value=operatorUrl;
+  Object.assign(linkInp.style,{border:'none',background:'transparent',flex:1,fontSize:12,color:'#1A237E',fontWeight:600,outline:'none',fontFamily:"'Roboto',sans-serif",overflow:'hidden',textOverflow:'ellipsis'});
+  const copyBtn=h('button',{style:{background:'#0D7390',color:'#fff',padding:'7px 14px',fontSize:12,borderRadius:7,flexShrink:0,cursor:'pointer',border:'none',fontFamily:"'Roboto',sans-serif",fontWeight:700},onClick:()=>{
     navigator.clipboard.writeText(operatorUrl).then(()=>{copyBtn.textContent='✓ Copiado!';setTimeout(()=>copyBtn.textContent='Copiar',2000);});
   }},'Copiar');
   linkRow.appendChild(linkInp);linkRow.appendChild(copyBtn);
   infoBox.appendChild(linkRow);
 
   // Steps guide
-  infoBox.appendChild(h('div',{style:{fontSize:12,fontWeight:700,color:'#555',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}},'Como funciona'));
+  infoBox.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}},'Como funciona'));
   const steps=[
-    ['1','Gestor cadastra os operadores com nome e PIN nesta tela'],
-    ['2','Operador escaneia o QR Code ou acessa o link'],
-    ['3','Operador busca o próprio nome e digita o PIN'],
-    ['4','Operador executa os checklists do dia'],
+    ['1','#0D7390','Gestor cadastra operadores com nome e PIN'],
+    ['2','#1A237E','Operador escaneia o QR Code ou acessa o link'],
+    ['3','#3949AB','Busca o nome e digita o PIN'],
+    ['4','#2E7D32','Executa os checklists do dia'],
   ];
-  steps.forEach(([n,txt])=>{
-    const step=h('div',{style:{display:'flex',gap:10,alignItems:'flex-start',marginBottom:8}});
-    step.appendChild(h('div',{style:{width:22,height:22,borderRadius:'50%',background:'#1A237E',color:'#fff',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},n));
-    step.appendChild(h('div',{style:{fontSize:12,color:'#444',lineHeight:1.5}},txt));
+  steps.forEach(([n,c,txt])=>{
+    const step=h('div',{style:{display:'flex',gap:12,alignItems:'center',marginBottom:10,padding:'8px 12px',background:'#F7F9FC',borderRadius:8}});
+    step.appendChild(h('div',{style:{width:26,height:26,borderRadius:'50%',background:c,color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},n));
+    step.appendChild(h('div',{style:{fontSize:13,color:'#444',lineHeight:1.4}},txt));
     infoBox.appendChild(step);
   });
   accessRow.appendChild(infoBox);
@@ -1892,20 +1917,29 @@ function renderSettings(){
     {done:true,label:'Compartilhar acesso com a equipe',sub:'Use o QR Code acima',link:null},
   ];
   const stepsCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'20px',marginBottom:16}});
-  stepsCard.appendChild(h('div',{style:{fontSize:13,fontWeight:700,color:'#1A1A1A',marginBottom:4}},'🚀 Primeiros Passos'));
+  const stepsTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
+  stepsTitle.appendChild(h('div',{style:{width:36,height:36,background:'#EEF2FF',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}},'🚀'));
+  const stepsTitleText=h('div',{});
+  stepsTitleText.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#1A1A1A'}},'Primeiros Passos'));
+  stepsTitleText.appendChild(h('div',{style:{fontSize:12,color:'#888',marginTop:2}},'Configure sua conta para começar a usar'));
+  stepsTitle.appendChild(stepsTitleText);
+  stepsCard.appendChild(stepsTitle);
+  stepsCard.appendChild(h('div',{style:{height:1,background:'#F0F0F0',margin:'14px 0'}}));
   const doneCount=steps2.filter(s=>s.done).length;
-  stepsCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:12}},doneCount+' de '+steps2.length+' etapas concluídas'));
+  stepsCard.appendChild(h('div',{style:{fontSize:12,color:'#666',marginBottom:8}},doneCount+' de '+steps2.length+' etapas concluídas'));
   const progBar=h('div',{style:{height:6,background:'#EEE',borderRadius:99,overflow:'hidden',marginBottom:16}});
   progBar.appendChild(h('div',{style:{height:'100%',background:'#2E7D32',borderRadius:99,width:(doneCount/steps2.length*100)+'%',transition:'width .3s'}}));
   stepsCard.appendChild(progBar);
   steps2.forEach(step=>{
-    const row=h('div',{style:{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #F5F5F5',cursor:step.link?'pointer':'default'},onClick:step.link?()=>ss({tab:step.link}):null});
-    row.appendChild(h('div',{style:{width:28,height:28,borderRadius:'50%',background:step.done?'#E8F5E9':'#F5F5F5',border:`2px solid ${step.done?'#2E7D32':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}},step.done?'✓':'○'));
-    const info=h('div',{style:{flex:1}});
-    info.appendChild(h('div',{style:{fontSize:13,fontWeight:step.done?400:600,color:step.done?'#888':'#1A1A1A',textDecoration:step.done?'line-through':'none'}},step.label));
-    info.appendChild(h('div',{style:{fontSize:11,color:step.done?'#2E7D32':'#999',marginTop:2}},step.sub));
+    const row=h('div',{style:{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:'1px solid #F5F5F5',cursor:step.link?'pointer':'default',transition:'background .12s'},onClick:step.link?()=>ss({tab:step.link}):null});
+    if(step.link){row.addEventListener('mouseover',()=>row.style.background='#F7F9FC');row.addEventListener('mouseout',()=>row.style.background='transparent');}
+    const checkCircle=h('div',{style:{width:32,height:32,borderRadius:'50%',background:step.done?'#2E7D32':'#F5F5F5',border:`2px solid ${step.done?'#2E7D32':'#D0D0D0'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,color:step.done?'#fff':'#CCC',fontWeight:700}},step.done?'✓':'·');
+    row.appendChild(checkCircle);
+    const info=h('div',{style:{flex:1,minWidth:0}});
+    info.appendChild(h('div',{style:{fontSize:13,fontWeight:600,color:step.done?'#999':'#1A1A1A',textDecoration:step.done?'line-through':'none',marginBottom:2}},step.label));
+    info.appendChild(h('div',{style:{fontSize:12,color:step.done?'#2E7D32':'#999'}},step.sub));
     row.appendChild(info);
-    if(step.link)row.appendChild(h('span',{style:{color:'#999',fontSize:14}},'›'));
+    if(step.link)row.appendChild(h('i',{className:'ti ti-chevron-right','aria-hidden':'true',style:{color:'#CCC',fontSize:16,flexShrink:0}}));
     stepsCard.appendChild(row);
   });
   frag.appendChild(stepsCard);
