@@ -1089,7 +1089,8 @@ function renderDocuments(){
               try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
             }
             await sb.from('documents').delete().eq('id',doc.id);
-            await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
+            const _nav2={screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab};
+            await reload();ss({..._nav2,success:'Documento excluído!'});setTimeout(()=>ss({..._nav2,success:null}),3000);
           }}},'Excluir')
         )
       ));
@@ -1529,7 +1530,8 @@ function renderDocuments(){
                 try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
               }
               await sb.from('documents').delete().eq('id',doc.id);
-              await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
+              const _nav={screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab};
+              await reload();ss({..._nav,success:'Documento excluído!'});setTimeout(()=>ss({..._nav,success:null}),3000);
             }
           }},'Excluir')
         )
@@ -1587,7 +1589,8 @@ function renderDocuments(){
                 try{const path=doc.file_url.split('/storage/v1/object/public/photos/')[1];await sb.storage.from('photos').remove([path]);}catch(e){}
               }
               await sb.from('documents').delete().eq('id',doc.id);
-              await reload();ss({success:'Documento excluído!'});setTimeout(()=>ss({success:null}),3000);
+              const _nav={screen:state.screen,selectedUnit:state.selectedUnit,tab:state.tab};
+              await reload();ss({..._nav,success:'Documento excluído!'});setTimeout(()=>ss({..._nav,success:null}),3000);
             }
           }},'Excluir')
         )
