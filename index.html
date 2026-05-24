@@ -433,33 +433,79 @@ function renderChecklistsTab(){
       else if(e.status==='in_progress')inProgressMap[e.checklist_id]={empId:e.operator_id,empName:e.operators?.name||''};
     }
   });
+
   const sectors=[...new Set(checklists.map(cl=>cl.sector||'Geral'))].sort();
   let anyPending=false;
+
   sectors.forEach(sector=>{
     const sCls=checklists.filter(cl=>(cl.sector||'Geral')===sector);
-    frag.appendChild(h('div',{className:'sec'},h('span',{},sector.toUpperCase()+' — '+sCls.length+' checklist'+(sCls.length!==1?'s':''))));
-    sCls.forEach(cl=>{
+    const active=sCls.filter(cl=>completedByMap[cl.id]||inProgressMap[cl.id]).length;
+
+    // Sector header card
+    const header=h('div',{style:{background:'linear-gradient(135deg,#1A237E 0%,#0D7390 100%)',borderRadius:'14px',margin:'12px 12px 0',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}});
+    const headerLeft=h('div',{});
+    headerLeft.appendChild(h('div',{style:{color:'#fff',fontSize:14,fontWeight:700}},sector));
+    headerLeft.appendChild(h('div',{style:{color:'rgba(255,255,255,.65)',fontSize:12,marginTop:2}},sCls.length+' checklist'+(sCls.length!==1?'s':'')+' configurado'+(sCls.length!==1?'s':'')));
+    header.appendChild(headerLeft);
+    // Status dots
+    const dots=h('div',{style:{display:'flex',gap:6}});
+    const done=sCls.filter(cl=>completedByMap[cl.id]).length;
+    const inProg=sCls.filter(cl=>inProgressMap[cl.id]).length;
+    const pending=sCls.length-done-inProg;
+    if(done>0)dots.appendChild(h('span',{style:{width:10,height:10,borderRadius:'50%',background:'#4CAF50',display:'inline-block'}}));
+    if(inProg>0)dots.appendChild(h('span',{style:{width:10,height:10,borderRadius:'50%',background:'#FFD54F',display:'inline-block'}}));
+    if(pending>0)dots.appendChild(h('span',{style:{width:10,height:10,borderRadius:'50%',background:'rgba(255,255,255,.35)',display:'inline-block'}}));
+    header.appendChild(dots);
+    frag.appendChild(header);
+
+    // Checklist cards
+    const cardsWrap=h('div',{style:{background:'#fff',borderRadius:'0 0 14px 14px',margin:'0 12px 8px',overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.07)'}});
+    sCls.forEach((cl,i)=>{
       const done=completedByMap[cl.id],progress=inProgressMap[cl.id];
       const isMyOwn=progress?.empId===employee?.id,isSomeoneElse=progress&&!isMyOwn;
       if(!done)anyPending=true;
-      const card=h('button',{className:'cl-card',onClick:()=>{if(done)ss({confirmRedo:cl});else if(!isSomeoneElse)startList(cl);}});
-      const iconBg=done?'#E8F5E9':isSomeoneElse?'#FFF8E1':isMyOwn?'#E3F2FD':'#F0F8FF';
-      card.appendChild(h('div',{className:'cl-card-icon',style:{background:iconBg}},done?'✅':isSomeoneElse?'🔄':isMyOwn?'▶️':(cl.icon||'📋')));
-      const body=h('div',{className:'cl-card-body'});
-      body.appendChild(h('div',{className:'cl-card-name'},cl.name));
-      body.appendChild(h('div',{className:'cl-card-time'},'⏱ '+(cl.start_time||'--')+' – '+(cl.deadline||'--')+' · '+cl.checklist_steps.filter(s=>s.position<999).length+' etapas'));
+
+      const card=h('button',{style:{
+        display:'flex',alignItems:'center',gap:12,width:'100%',padding:'13px 16px',
+        background:'transparent',border:'none',borderBottom:i<sCls.length-1?'1px solid #F0F3F8':'none',
+        cursor:isSomeoneElse?'default':'pointer',textAlign:'left',fontFamily:"'Roboto',sans-serif",
+        transition:'background .12s'
+      },onClick:()=>{if(done)ss({confirmRedo:cl});else if(!isSomeoneElse)startList(cl);}});
+      card.addEventListener('mouseover',()=>{if(!isSomeoneElse)card.style.background='#F7F9FC';});
+      card.addEventListener('mouseout',()=>card.style.background='transparent');
+
+      // Clock icon (fixed, no emoji)
+      const iconBg=done?'#E8F5E9':isSomeoneElse?'#FFF8E1':isMyOwn?'#E3F2FD':'#E8F4F8';
+      const iconColor=done?'#2E7D32':isSomeoneElse?'#B76E00':isMyOwn?'#1565C0':'#0D7390';
+      const icon=h('div',{style:{width:40,height:40,borderRadius:10,background:iconBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}});
+      icon.innerHTML=done
+        ?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+iconColor+'" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        :isSomeoneElse
+        ?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+iconColor+'" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+        :'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+iconColor+'" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      card.appendChild(icon);
+
+      // Info
+      const info=h('div',{style:{flex:1,minWidth:0}});
+      info.appendChild(h('div',{style:{fontSize:14,fontWeight:700,color:done?'#2E7D32':'#1A1A1A',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',marginBottom:2}},cl.name));
+      const subtitle=done?'✓ '+done.empName+' · '+done.time:(cl.start_time||'--')+' – '+(cl.deadline||'--');
+      info.appendChild(h('div',{style:{fontSize:12,color:'#888'}},subtitle));
+      card.appendChild(info);
+
+      // Status badge
       let badgeTxt,badgeBg,badgeColor;
-      if(done){badgeTxt='✅ Concluído';badgeBg='#E8F5E9';badgeColor='#2E7D32';}
-      else if(isSomeoneElse){badgeTxt='⏳ '+progress.empName;badgeBg='#FFF8E1';badgeColor='#B76E00';}
-      else if(isMyOwn){badgeTxt='▶ Continuar';badgeBg='#E3F2FD';badgeColor='#1565C0';}
+      if(done){badgeTxt='Concluído';badgeBg='#E8F5E9';badgeColor='#2E7D32';}
+      else if(isSomeoneElse){badgeTxt='Em andamento';badgeBg='#FFF8E1';badgeColor='#B76E00';}
+      else if(isMyOwn){badgeTxt='Continuar';badgeBg='#E3F2FD';badgeColor='#1565C0';}
       else{badgeTxt='Pendente';badgeBg='#EEF2FF';badgeColor='#3949AB';}
-      body.appendChild(h('span',{className:'cl-card-badge',style:{background:badgeBg,color:badgeColor}},badgeTxt));
-      card.appendChild(body);
-      frag.appendChild(card);
+      card.appendChild(h('span',{style:{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:99,background:badgeBg,color:badgeColor,flexShrink:0,whiteSpace:'nowrap'}},badgeTxt));
+      cardsWrap.appendChild(card);
     });
+    frag.appendChild(cardsWrap);
   });
+
   if(!anyPending&&checklists.length>0){
-    const allDone=h('div',{style:{background:'#fff',borderRadius:'14px',margin:'10px 12px',padding:'20px',textAlign:'center',boxShadow:'0 1px 3px rgba(0,0,0,.06)'}});
+    const allDone=h('div',{style:{background:'#fff',borderRadius:'14px',margin:'10px 12px',padding:'24px',textAlign:'center',boxShadow:'0 1px 3px rgba(0,0,0,.06)'}});
     allDone.appendChild(h('div',{style:{fontSize:36,marginBottom:8}},'🎉'));
     allDone.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#2E7D32',marginBottom:4}},'Tudo concluído!'));
     allDone.appendChild(h('div',{style:{fontSize:13,color:'#888'}},'Todos os checklists do dia foram feitos.'));
