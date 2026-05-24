@@ -274,7 +274,8 @@ async function nextStep(){
   const ni=state.stepIdx+1;
   if(ni>=state.activeList.checklist_steps.length){
     try{
-      await sb.from('executions').update({status:'done',score:100,finished_at:new Date().toISOString()}).eq('id',state.executionId);
+      const pendingCount=Object.values(state.sChecks||{}).filter(v=>v===false).length;
+      await sb.from('executions').update({status:'done',score:100,finished_at:new Date().toISOString(),pending_count:pendingCount}).eq('id',state.executionId);
       const execs=await loadTodayExecs();
       ss({lastDone:{name:state.activeList.name,icon:state.activeList.icon,score:100},screen:'home',activeList:null,executionId:null,stepIdx:0,sVals:{},sPhotos:{},sChecks:{},executions:execs});
     }catch(e){ss({error:'Erro ao finalizar.'});}
@@ -429,7 +430,7 @@ function renderChecklistsTab(){
   const completedByMap={},inProgressMap={};
   (executions||[]).forEach(e=>{
     if(new Date(e.started_at)>=today){
-      if(e.status==='done')completedByMap[e.checklist_id]={empId:e.operator_id,empName:e.operators?.name||'',time:new Date(e.finished_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+      if(e.status==='done')completedByMap[e.checklist_id]={empId:e.operator_id,empName:e.operators?.name||'',time:new Date(e.finished_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),pendingCount:e.pending_count||0};
       else if(e.status==='in_progress')inProgressMap[e.checklist_id]={empId:e.operator_id,empName:e.operators?.name||''};
     }
   });
@@ -494,7 +495,11 @@ function renderChecklistsTab(){
 
       // Status badge
       let badgeTxt,badgeBg,badgeColor;
-      if(done){badgeTxt='Concluído';badgeBg='#E8F5E9';badgeColor='#2E7D32';}
+      if(done){
+        const pCount=done.pendingCount||0;
+        if(pCount>0){badgeTxt='⚠️ '+pCount+' pendência'+(pCount>1?'s':'');badgeBg='#FFF8E1';badgeColor='#B76E00';}
+        else{badgeTxt='✅ Concluído';badgeBg='#E8F5E9';badgeColor='#2E7D32';}
+      }
       else if(isSomeoneElse){badgeTxt='Em andamento';badgeBg='#FFF8E1';badgeColor='#B76E00';}
       else if(isMyOwn){badgeTxt='Continuar';badgeBg='#E3F2FD';badgeColor='#1565C0';}
       else{badgeTxt='Pendente';badgeBg='#EEF2FF';badgeColor='#3949AB';}
