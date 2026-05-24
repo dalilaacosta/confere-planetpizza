@@ -859,7 +859,28 @@ function renderChecklists(){
 
     mb.appendChild(inp('Nome do Checklist *','name','text','Ex: Limpeza de Abertura'));
     const row1=div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px',marginTop:'14px'});
-    row1.appendChild(inp('Ícone','icon','text','📋'));
+    // Emoji picker for icon
+    const iconGroup=h('div',{className:'form-group'});
+    iconGroup.appendChild(h('label',{className:'form-label'},'Ícone'));
+    const iconBtn=h('button',{type:'button',className:'form-inp',style:{cursor:'pointer',fontSize:22,textAlign:'center',padding:'6px',background:'#fff',border:'1.5px solid #D0D0D0',display:'flex',alignItems:'center',justifyContent:'center',gap:6},
+      onClick:()=>{picker.style.display=picker.style.display==='none'?'grid':'none';}
+    },h('span',{id:'icon-preview'},md.icon||'📋'),h('span',{style:{fontSize:11,color:'#888',marginLeft:4}},'▼'));
+    const emojis=['📋','🧹','🍕','🍔','🍽️','🥗','🧽','🧴','🪣','💧','🔧','⚙️','🛒','📦','🚪','🚿','🪟','🧯','🔥','❄️','🌡️','📱','💻','🖥️','📷','🏠','🚗','👷','👔','📝','✅','⭐','🎯','🔑'];
+    const picker=h('div',{style:{display:'none',gridTemplateColumns:'repeat(6,1fr)',gap:4,position:'absolute',zIndex:99,background:'#fff',border:'1px solid #D0D0D0',padding:8,boxShadow:'0 4px 12px rgba(0,0,0,.15)',top:'100%',left:0,right:0}});
+    emojis.forEach(e=>{
+      const btn=h('button',{type:'button',style:{fontSize:20,padding:4,background:'none',border:'none',cursor:'pointer',borderRadius:4},onClick:()=>{
+        md.icon=e;
+        document.getElementById('icon-preview').textContent=e;
+        picker.style.display='none';
+      }},e);
+      btn.addEventListener('mouseover',()=>btn.style.background='#F0F4FF');
+      btn.addEventListener('mouseout',()=>btn.style.background='none');
+      picker.appendChild(btn);
+    });
+    const iconWrap=h('div',{style:{position:'relative'}});
+    iconWrap.appendChild(iconBtn);iconWrap.appendChild(picker);
+    iconGroup.appendChild(iconWrap);
+    row1.appendChild(iconGroup);
     row1.appendChild(sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha'],['Salão','Salão'],['Estoque','Estoque']]));
     row1.appendChild(sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']]));
     mb.appendChild(row1);
