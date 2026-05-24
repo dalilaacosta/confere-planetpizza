@@ -657,8 +657,7 @@ function renderExec(){
     const cardBd=isProbStep?'#FFCDD2':C.bd;
     const tL={check:isProbStep&&item.label.includes('Detectou')?'PROBLEMA ENCONTRADO?':'CONFIRMAÇÃO',photo:isOptPhoto?'FOTO (OPCIONAL)':'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:isProbText?'DESCREVA O PROBLEMA':'OBSERVAÇÃO'}[item.type]||'ITEM';
     const tI={check:isProbStep?'🔧':'✓',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
-    body.appendChild(h('div',{style:{background:secBg,padding:'8px 14px',marginTop:10,borderRadius:'14px 14px 0 0',display:'flex',alignItems:'center'}},h('span',{style:{color:'#fff',fontSize:11,fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase'}},tI+'  '+tL)));
-    const box=h('div',{style:{background:cardBg,borderRadius:'0 0 14px 14px',border:`1px solid ${cardBd}`,borderTop:'none',padding:'14px',marginBottom:8}});
+    const box=h('div',{style:{background:cardBg,borderRadius:'14px',border:`1px solid ${cardBd}`,padding:'14px',marginBottom:10,marginTop:10}});
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
       const ck=sChecks[item.id];
