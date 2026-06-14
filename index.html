@@ -169,7 +169,7 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 async function init(){
   try{
     const {data:ops}=await sb.from('operators').select('*').eq('active',true).order('name');
-    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position))').eq('active',true).order('sector');
+    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();
@@ -502,7 +502,11 @@ function renderChecklistsTab(){
       }
       else if(isSomeoneElse){badgeTxt='Em andamento';badgeBg='#FFF8E1';badgeColor='#B76E00';}
       else if(isMyOwn){badgeTxt='Continuar';badgeBg='#E3F2FD';badgeColor='#1565C0';}
-      else{badgeTxt='Pendente';badgeBg='#EEF2FF';badgeColor='#3949AB';}
+      else{
+        badgeTxt=cl.checklist_type==='inventory'?'📦 Contagem':'Pendente';
+        badgeBg=cl.checklist_type==='inventory'?'#FFF8E1':'#EEF2FF';
+        badgeColor=cl.checklist_type==='inventory'?'#B76E00':'#3949AB';
+      }
       card.appendChild(h('span',{style:{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:99,background:badgeBg,color:badgeColor,flexShrink:0,whiteSpace:'nowrap'}},badgeTxt));
       cardsWrap.appendChild(card);
     });
@@ -679,7 +683,22 @@ function renderExec(){
         if(isOptPhoto){box.appendChild(div({textAlign:'center',marginTop:8},h('button',{className:'btn',onClick:()=>ss({sPhotos:{...sPhotos,[item.id]:'skip'}}),style:{background:'transparent',border:'none',color:C.t3,fontSize:12,cursor:'pointer',fontFamily:"'Roboto',sans-serif",textDecoration:'underline'}},'Pular — sem foto')));}
       }
     }
-    if(item.type==='number'){const inp=document.createElement('input');inp.type='number';inp.className='inp';inp.placeholder='Ex: -20';inp.value=sVals[item.id]||'';inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));box.appendChild(inp);}
+    if(item.type==='number'){
+        const numRow=h('div',{style:{display:'flex',alignItems:'center',gap:10}});
+        const inp=document.createElement('input');
+        inp.type='number';inp.inputMode='numeric';inp.className='inp';
+        inp.placeholder='0';inp.value=sVals[item.id]||'';
+        Object.assign(inp.style,{flex:1,fontSize:28,fontWeight:700,textAlign:'center',padding:'12px'});
+        inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));
+        numRow.appendChild(inp);
+        if(item.unit){
+          numRow.appendChild(h('div',{style:{
+            background:'#E8F4F8',color:'#0D7390',fontWeight:700,fontSize:13,
+            padding:'12px 14px',borderRadius:10,flexShrink:0,whiteSpace:'nowrap'
+          }},item.unit));
+        }
+        box.appendChild(numRow);
+      }
     if(item.type==='text'){const ta=document.createElement('textarea');ta.className='inp';ta.rows=3;ta.placeholder=isProbText?'Descreva o problema encontrado...':'Escreva suas observações...';ta.value=sVals[item.id]||'';ta.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));box.appendChild(ta);}
     body.appendChild(box);
     if(i<step.step_items.length-1)body.appendChild(div({height:8}));
