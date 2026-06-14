@@ -305,6 +305,9 @@ async function init(){
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
     const {data:companyData}=await sb.from('companies').select('*').eq('id',COMPANY_ID).single();
+    console.log('🔍 DEBUG COMPANY_ID:', COMPANY_ID);
+    console.log('🔍 DEBUG documents loaded:', (docsR.data||[]).length, docsR.data?.map(d=>d.name));
+    console.log('🔍 DEBUG units loaded:', (unitsR.data||[]).map(u=>u.name));
     const firstUnit=(unitsR.data||[])[0]||null;
     ss({screen:'dashboard',selectedUnit:firstUnit,tab:'overview',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
   }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
