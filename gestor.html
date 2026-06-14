@@ -306,7 +306,8 @@ async function init(){
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
     const {data:companyData}=await sb.from('companies').select('*').eq('id',COMPANY_ID).single();
     console.log('🔍 DEBUG COMPANY_ID:', COMPANY_ID);
-    console.log('🔍 DEBUG documents loaded:', (docsR.data||[]).length, docsR.data?.map(d=>d.name));
+    console.log('🔍 DEBUG docs RAW:', docsR);
+    console.log('🔍 DEBUG documents loaded:', (docsR.data||[]).length, docsR.data?.map(d=>({name:d.name,cid:d.company_id})));
     console.log('🔍 DEBUG units loaded:', (unitsR.data||[]).map(u=>u.name));
     const firstUnit=(unitsR.data||[])[0]||null;
     ss({screen:'dashboard',selectedUnit:firstUnit,tab:'overview',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
@@ -336,7 +337,7 @@ async function reload(){
     sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('company_id',COMPANY_ID).order('sector'),
     sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false}),
-    sb.from('documents').select('*, units(name)').eq('company_id',COMPANY_ID).order('expiry_date'),
+    sb.from('documents').select('*, units(name)').eq('company_id',COMPANY_ID).order('expiry_date').then(r=>{console.log('🔍 RELOAD docs query result:', r?.data?.length, 'company_id used:', COMPANY_ID, r?.data?.map(d=>d.name+' ['+d.company_id+']'));return r;}),
   ]);
   const cls=clsR.data||[];
   cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
