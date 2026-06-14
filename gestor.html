@@ -2069,7 +2069,7 @@ function renderDashboard(){
   const userDiv=h('div',{style:{display:'flex',alignItems:'center',gap:8}});
   userDiv.appendChild(h('span',{style:{color:'rgba(255,255,255,.8)',fontSize:'13px'}},manager?.name||''));
 
-  userDiv.appendChild(h('button',{style:{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'12px',fontWeight:'700',padding:'5px 12px',borderRadius:'99px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{localStorage.removeItem('gestor_session');window.location.href='login.html';}},'Sair'));
+  userDiv.appendChild(h('button',{style:{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'12px',fontWeight:'700',padding:'5px 12px',borderRadius:'99px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{localStorage.removeItem('confere_user');window.location.href='login.html';}},'Sair'));
   topBar.appendChild(userDiv);
   frag.appendChild(topBar);
 
