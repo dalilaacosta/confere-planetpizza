@@ -833,6 +833,7 @@ function renderChecklists(){
         h('td',{style:{whiteSpace:'nowrap'}},
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
+          cl.checklist_type==='inventory'?h('button',{className:'btn btn-sm',style:{marginRight:3,background:'#0D7390',color:'#fff'},onClick:()=>ss({modal:'results',modalData:{...cl}})},'📊 Resultados'):'',
           h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:3},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
           h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"? Esta ação não pode ser desfeita.')){try{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}catch(e){ss({error:'Erro ao excluir: '+(e.message||'')});setTimeout(()=>ss({error:null}),4000);}}}},'Excluir')
         )
@@ -948,6 +949,84 @@ function renderChecklists(){
     ));
     overlay.appendChild(m);frag.appendChild(overlay);
   }
+  // Modal resultados contagem
+  if(modal==='results'){
+    const cl=modalData;
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=h('div',{className:'modal',style:{maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',background:'#fff',borderRadius:4,boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
+    m.appendChild(h('div',{className:'modal-hdr',style:{padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}},
+      h('span',{style:{fontSize:14}},'📊 Resultados — '+cl.name),
+      h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
+    ));
+    const mb=h('div',{className:'modal-body',style:{padding:'20px'}});
+    mb.appendChild(h('div',{style:{fontSize:12,color:'#888',marginBottom:16}},'Carregando contagens...'));
+
+    // Load executions async
+    (async()=>{
+      mb.innerHTML='';
+      const{data:execs}=await sb.from('executions')
+        .select('*, operators(name)')
+        .eq('checklist_id',cl.id)
+        .eq('status','done')
+        .order('finished_at',{ascending:false})
+        .limit(10);
+
+      if(!execs||execs.length===0){
+        mb.appendChild(h('div',{style:{textAlign:'center',padding:'32px',color:'#999'}},'Nenhuma contagem finalizada ainda.'));
+        return;
+      }
+
+      execs.forEach((ex,ei)=>{
+        const exCard=h('div',{style:{background:'#F7F9FC',border:'1px solid #E0E0E0',borderRadius:8,padding:'14px',marginBottom:12}});
+        const exHeader=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}});
+        const dt=new Date(ex.finished_at);
+        exHeader.appendChild(h('div',{},
+          h('div',{style:{fontWeight:700,fontSize:13,color:'#1A1A1A'}},
+            dt.toLocaleDateString('pt-BR')+' às '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})),
+          h('div',{style:{fontSize:12,color:'#888',marginTop:2}},'Operador: '+(ex.operators?.name||'—'))
+        ));
+        if(ex.pending_count>0)exHeader.appendChild(h('span',{style:{fontSize:11,fontWeight:700,padding:'3px 8px',background:'#FFF8E1',color:'#B76E00',borderRadius:99}},ex.pending_count+' pendência(s)'));
+        exCard.appendChild(exHeader);
+
+        // Load item responses for this execution
+        const tblWrap=h('div',{style:{fontSize:12,color:'#888'}});tblWrap.textContent='Carregando itens...';
+        exCard.appendChild(tblWrap);
+        mb.appendChild(exCard);
+
+        sb.from('item_responses').select('*, step_items(label,type,unit)').eq('execution_id',ex.id).then(({data:responses})=>{
+          tblWrap.innerHTML='';
+          const items=(responses||[]).filter(r=>r.step_items?.type==='number'&&r.value);
+          if(items.length===0){tblWrap.textContent='Sem itens contados.';return;}
+
+          const tbl=h('table',{style:{width:'100%',borderCollapse:'collapse'}});
+          tbl.appendChild(h('thead',{},h('tr',{},
+            h('th',{style:{textAlign:'left',fontSize:11,fontWeight:700,color:'#555',padding:'6px 8px',borderBottom:'1px solid #D0D0D0',textTransform:'uppercase',letterSpacing:'.05em'}},'Item'),
+            h('th',{style:{textAlign:'right',fontSize:11,fontWeight:700,color:'#555',padding:'6px 8px',borderBottom:'1px solid #D0D0D0',textTransform:'uppercase',letterSpacing:'.05em',width:'80px'}},'Qtd'),
+            h('th',{style:{textAlign:'left',fontSize:11,fontWeight:700,color:'#555',padding:'6px 8px',borderBottom:'1px solid #D0D0D0',textTransform:'uppercase',letterSpacing:'.05em',width:'100px'}},'Unidade')
+          )));
+          const tbody=h('tbody',{});
+          items.forEach((r,i)=>{
+            const parts=(r.value||'').split('|');
+            const qty=parts[0]||'—',unit=parts[1]||r.step_items?.unit||'—';
+            const tr=h('tr',{style:{background:i%2===0?'#fff':'#F7F9FC'}},
+              h('td',{style:{padding:'7px 8px',fontSize:13,color:'#1A1A1A'}},r.step_items?.label||'—'),
+              h('td',{style:{padding:'7px 8px',fontSize:14,fontWeight:700,color:'#0D7390',textAlign:'right'}},qty),
+              h('td',{style:{padding:'7px 8px',fontSize:12,color:'#666'}},unit)
+            );
+            tbody.appendChild(tr);
+          });
+          tbl.appendChild(tbody);tblWrap.appendChild(tbl);
+        });
+      });
+    })();
+
+    m.appendChild(mb);
+    m.appendChild(h('div',{className:'modal-footer',style:{padding:'12px 20px',position:'sticky',bottom:0,background:'#fff',borderTop:'1px solid #EBEBEB'}},
+      h('button',{className:'btn btn-gray',style:{padding:'10px 24px'},onClick:()=>ss({modal:null,modalData:{}})},'Fechar')
+    ));
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
   // Modal etapas e itens
   if(modal==='steps'){
     const cl=modalData;
