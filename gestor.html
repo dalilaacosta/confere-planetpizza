@@ -305,10 +305,11 @@ async function init(){
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
     const {data:companyData}=await sb.from('companies').select('*').eq('id',COMPANY_ID).single();
-    console.log('🔍 DEBUG COMPANY_ID:', COMPANY_ID);
-    console.log('🔍 DEBUG docs RAW:', docsR);
-    console.log('🔍 DEBUG documents loaded:', (docsR.data||[]).length, docsR.data?.map(d=>({name:d.name,cid:d.company_id})));
-    console.log('🔍 DEBUG units loaded:', (unitsR.data||[]).map(u=>u.name));
+    console.log('🔍 COMPANY_ID:', COMPANY_ID);
+    console.log('🔍 docs count:', (docsR.data||[]).length);
+    console.log('🔍 docs error:', docsR.error);
+    console.log('🔍 docs status:', docsR.status);
+    (docsR.data||[]).forEach((d,i)=>console.log('🔍 doc['+i+']:', d.name, '| company_id:', d.company_id));
     const firstUnit=(unitsR.data||[])[0]||null;
     ss({screen:'dashboard',selectedUnit:firstUnit,tab:'overview',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
   }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
