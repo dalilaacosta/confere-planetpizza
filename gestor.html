@@ -305,7 +305,8 @@ async function init(){
     const issuesR=await sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false});
     const docsR=await sb.from('documents').select('*, units(name)').order('expiry_date');
     const {data:companyData}=await sb.from('companies').select('*').eq('id',COMPANY_ID).single();
-    ss({screen:'unit_select',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
+    const firstUnit=(unitsR.data||[])[0]||null;
+    ss({screen:'dashboard',selectedUnit:firstUnit,tab:'overview',operators:opsR.data||[],checklists:cls,units:unitsR.data||[],executions:execs,issues:issuesR.data||[],documents:docsR.data||[],companyData:companyData||{}});
   }catch(e){console.error(e);ss({screen:'dashboard',error:'Erro ao carregar dados. Recarregue a página.'});}
 }
 
@@ -2027,7 +2028,7 @@ function renderDashboard(){
   topBar.appendChild(logoDiv);
   const userDiv=h('div',{style:{display:'flex',alignItems:'center',gap:8}});
   userDiv.appendChild(h('span',{style:{color:'rgba(255,255,255,.8)',fontSize:'13px'}},manager?.name||''));
-  userDiv.appendChild(h('button',{style:{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'12px',fontWeight:'700',padding:'5px 12px',borderRadius:'99px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>ss({screen:'unit_select',selectedUnit:null,tab:'overview'})},'🔄 Trocar'));
+
   userDiv.appendChild(h('button',{style:{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'12px',fontWeight:'700',padding:'5px 12px',borderRadius:'99px',cursor:'pointer',fontFamily:"'Roboto',sans-serif"},onClick:()=>{localStorage.removeItem('gestor_session');window.location.href='login.html';}},'Sair'));
   topBar.appendChild(userDiv);
   frag.appendChild(topBar);
