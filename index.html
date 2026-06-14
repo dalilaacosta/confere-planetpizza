@@ -168,8 +168,16 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 
 async function init(){
   try{
-    const {data:ops}=await sb.from('operators').select('*').eq('active',true).order('name');
-    const {data:cls}=await sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
+    // Get company from URL param (?company=UUID)
+    const urlCompany=new URLSearchParams(window.location.search).get('company');
+    let opsQuery=sb.from('operators').select('*').eq('active',true).order('name');
+    let clsQuery=sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
+    if(urlCompany){
+      opsQuery=opsQuery.eq('company_id',urlCompany);
+      clsQuery=clsQuery.eq('company_id',urlCompany);
+    }
+    const {data:ops}=await opsQuery;
+    const {data:cls}=await clsQuery;
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();

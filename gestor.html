@@ -1332,7 +1332,7 @@ function renderSettings(){
   if(error)frag.appendChild(h('div',{className:'err-bar'},error));
 
   // ── ACESSO DOS OPERADORES ─────────────────────────────────────────────────
-  const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/');
+  const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/') + '?company=' + COMPANY_ID;
   const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'24px',marginBottom:16}});
   const accessCardTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
   accessCardTitle.appendChild(h('div',{style:{width:36,height:36,background:'#E8F4F8',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}},'📱'));
@@ -1891,7 +1891,7 @@ function renderSettings(){
   if(error)frag.appendChild(h('div',{className:'err-bar'},error));
 
   // ── ACESSO DOS OPERADORES ─────────────────────────────────────────────────
-  const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/');
+  const operatorUrl=window.location.origin+(window.location.pathname.replace('gestor.html','')+'index.html').replace('//','/') + '?company=' + COMPANY_ID;
   const accessCard=h('div',{style:{background:'#fff',borderRadius:12,border:'0.5px solid #E0E0E0',padding:'24px',marginBottom:16}});
   const accessCardTitle=h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6}});
   accessCardTitle.appendChild(h('div',{style:{width:36,height:36,background:'#E8F4F8',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}},'📱'));
