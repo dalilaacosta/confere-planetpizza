@@ -754,12 +754,8 @@ function renderExec(){
             if(u===savedUnit)o.selected=true;
             unitSel.appendChild(o);
           });
-            const saveNumUnit=async()=>{
-            const v=inp.value.trim();
-            if(!v)return;
-            const combined=v+'|'+unitSel.value;
-            state.sVals={...state.sVals,[item.id]:combined};
-            // Save to DB incrementally so values persist
+            let _saveTimer=null;
+          const persistVal=async(combined)=>{
             try{
               await sb.from('item_responses').upsert(
                 {execution_id:state.executionId,item_id:item.id,value:combined},
@@ -767,9 +763,19 @@ function renderExec(){
               );
             }catch(e){}
           };
-          inp.addEventListener('blur',saveNumUnit);
-          inp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Tab'){saveNumUnit();inp.blur();}});
-          unitSel.addEventListener('change',saveNumUnit);
+          const saveNumUnit=(immediate)=>{
+            const v=inp.value.trim();
+            if(!v)return;
+            const combined=v+'|'+unitSel.value;
+            state.sVals={...state.sVals,[item.id]:combined};
+            if(_saveTimer)clearTimeout(_saveTimer);
+            if(immediate){persistVal(combined);}
+            else{_saveTimer=setTimeout(()=>persistVal(combined),800);}
+          };
+          inp.addEventListener('input',()=>saveNumUnit(false));
+          inp.addEventListener('blur',()=>saveNumUnit(true));
+          inp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Tab'){saveNumUnit(true);inp.blur();}});
+          unitSel.addEventListener('change',()=>saveNumUnit(true));
           numRow.appendChild(unitSel);
         }else{
           inp.addEventListener('blur',e=>{state.sVals={...state.sVals,[item.id]:e.target.value};});
@@ -833,6 +839,21 @@ function renderExec(){
   btns.appendChild(h('button',{className:'btn '+(ok?(isLast?'btn-green':'btn-blue'):'btn-gray'),onClick:ok?nextStep:null,disabled:!ok},isLast?'✓  Finalizar':'Próximo  ▶'));
   scr.appendChild(btns);return scr;
 }
+
+// Save all inventory values before page closes
+window.addEventListener('beforeunload',()=>{
+  if(state.screen==='exec'&&state.executionId){
+    Object.entries(state.sVals).forEach(([itemId,val])=>{
+      if(val){
+        navigator.sendBeacon(
+          'https://fmuolonucniwaosseijh.supabase.co/rest/v1/item_responses',
+          new Blob([JSON.stringify({execution_id:state.executionId,item_id:itemId,value:val})],
+            {type:'application/json'})
+        );
+      }
+    });
+  }
+});
 
 function render(){
   const root=document.getElementById('root');root.innerHTML='';
