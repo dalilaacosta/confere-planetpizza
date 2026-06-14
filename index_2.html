@@ -168,16 +168,8 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 
 async function init(){
   try{
-    // Get company from URL param (?company=UUID)
-    const urlCompany=new URLSearchParams(window.location.search).get('company');
-    let opsQuery=sb.from('operators').select('*').eq('active',true).order('name');
-    let clsQuery=sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
-    if(urlCompany){
-      opsQuery=opsQuery.eq('company_id',urlCompany);
-      clsQuery=clsQuery.eq('company_id',urlCompany);
-    }
-    const {data:ops}=await opsQuery;
-    const {data:cls}=await clsQuery;
+    const {data:ops}=await sb.from('operators').select('*').eq('active',true).order('name');
+    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();
@@ -349,7 +341,27 @@ function renderLogin(){
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('☑','ConfereOps — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
-  const body=div({flex:1,overflowY:'auto'});
+  const isInvCl=state.activeList.checklist_type==='inventory';
+  const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
+
+  // Search bar for inventory checklists
+  let invSearchQuery='';
+  if(isInvCl){
+    const searchBar=h('div',{style:{padding:'10px 12px',background:'#fff',borderBottom:'1px solid #F0F0F0',flexShrink:0,display:'flex',alignItems:'center',gap:8}});
+    const searchIcon=h('span',{style:{fontSize:16,color:'#999'}},'🔍');
+    const searchInp=document.createElement('input');
+    searchInp.type='text';searchInp.placeholder='Buscar item...';
+    Object.assign(searchInp.style,{border:'none',outline:'none',flex:1,fontSize:14,fontFamily:"'Roboto',sans-serif",background:'transparent'});
+    searchInp.addEventListener('input',e=>{
+      invSearchQuery=e.target.value.toLowerCase();
+      document.querySelectorAll('.inv-item-row').forEach(row=>{
+        const name=(row.dataset.name||'').toLowerCase();
+        row.style.display=invSearchQuery&&!name.includes(invSearchQuery)?'none':'';
+      });
+    });
+    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);
+    body.appendChild(searchBar);
+  }
   const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
   const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
   const swrap=div({className:'search-wrap'});
@@ -382,14 +394,7 @@ function renderLogin(){
     if(val.length===4){
       const emp=state.selEmp;
       const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
-      if(op){
-        // Filter checklists by company after login
-        const companyCls=state.checklists.filter(cl=>cl.company_id===op.company_id);
-        // Also filter operators shown in rankings to same company
-        const companyOps=state.operators.filter(o=>o.company_id===op.company_id);
-        ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null,
-            checklists:companyCls,operators:companyOps});
-      }
+      if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
       else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
     }
   });
@@ -738,17 +743,12 @@ function renderExec(){
             if(u===savedUnit)o.selected=true;
             unitSel.appendChild(o);
           });
-            const saveNumUnit=()=>{
-            const v=inp.value.trim();
-            if(v)state.sVals={...state.sVals,[item.id]:v+'|'+unitSel.value};
-          };
-          inp.addEventListener('blur',saveNumUnit);
-          inp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Tab'){saveNumUnit();inp.blur();}});
-          unitSel.addEventListener('change',()=>{saveNumUnit();});
+          const saveNumUnit=()=>ss({sVals:{...state.sVals,[item.id]:inp.value+'|'+unitSel.value}});
+          inp.addEventListener('input',saveNumUnit);
+          unitSel.addEventListener('change',saveNumUnit);
           numRow.appendChild(unitSel);
         }else{
-          inp.addEventListener('blur',e=>{state.sVals={...state.sVals,[item.id]:e.target.value};});
-        inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
+          inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));
         }
         box.appendChild(numRow);
       }
@@ -812,19 +812,10 @@ function renderExec(){
 function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
-  try{
-    if(state.screen==='loading')c=renderLoading();
-    else if(state.screen==='login')c=renderLogin();
-    else if(state.screen==='home')c=renderHome();
-    else if(state.screen==='exec')c=renderExec();
-  }catch(err){
-    console.error('❌ Render error:', err);
-    const errDiv=document.createElement('div');
-    errDiv.style.cssText='padding:20px;color:red;font-family:Roboto,sans-serif;font-size:13px;';
-    errDiv.textContent='Erro: '+err.message;
-    root.appendChild(errDiv);
-    return;
-  }
+  if(state.screen==='loading')c=renderLoading();
+  else if(state.screen==='login')c=renderLogin();
+  else if(state.screen==='home')c=renderHome();
+  else if(state.screen==='exec')c=renderExec();
   if(c){c.className='screen';root.appendChild(c);}
 }
 render();init();
