@@ -246,7 +246,7 @@ function canNext(){
     }
     if(item.type==='check')return state.sChecks[item.id]!==undefined;
     if(item.type==='photo'){const isOpt=item.label.toLowerCase().includes('opcional');return!!state.sPhotos[item.id]||isOpt;}
-    if(item.type==='number')return(state.sVals[item.id]||'').trim().length>0;
+    if(item.type==='number')return((state.sVals[item.id]||'').split('|')[0]||'').trim().length>0;
     return true;
   });
 }
@@ -684,18 +684,30 @@ function renderExec(){
       }
     }
     if(item.type==='number'){
+        const isInvItem=state.activeList.checklist_type==='inventory';
         const numRow=h('div',{style:{display:'flex',alignItems:'center',gap:10}});
         const inp=document.createElement('input');
         inp.type='number';inp.inputMode='numeric';inp.className='inp';
-        inp.placeholder='0';inp.value=sVals[item.id]||'';
+        inp.placeholder='0';
+        const savedVal=(sVals[item.id]||'').split('|')[0];
+        inp.value=savedVal;
         Object.assign(inp.style,{flex:1,fontSize:28,fontWeight:700,textAlign:'center',padding:'12px'});
-        inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));
         numRow.appendChild(inp);
-        if(item.unit){
-          numRow.appendChild(h('div',{style:{
-            background:'#E8F4F8',color:'#0D7390',fontWeight:700,fontSize:13,
-            padding:'12px 14px',borderRadius:10,flexShrink:0,whiteSpace:'nowrap'
-          }},item.unit));
+        if(isInvItem){
+          const unitSel=document.createElement('select');unitSel.className='inp';
+          Object.assign(unitSel.style,{width:'120px',fontSize:13,fontWeight:700,padding:'12px 8px',color:'#0D7390',background:'#E8F4F8',border:'2px solid #B2DDE8',borderRadius:10,cursor:'pointer'});
+          const savedUnit=(sVals[item.id]||'').split('|')[1]||'Kilo(s)';
+          ['Kilo(s)','Caixa(s)','Bisnaga(s)','UN','Balde(s)','Litro(s)'].forEach(u=>{
+            const o=document.createElement('option');o.value=u;o.textContent=u;
+            if(u===savedUnit)o.selected=true;
+            unitSel.appendChild(o);
+          });
+          const saveNumUnit=()=>ss({sVals:{...state.sVals,[item.id]:inp.value+'|'+unitSel.value}});
+          inp.addEventListener('input',saveNumUnit);
+          unitSel.addEventListener('change',saveNumUnit);
+          numRow.appendChild(unitSel);
+        }else{
+          inp.addEventListener('input',e=>ss({sVals:{...sVals,[item.id]:e.target.value}}));
         }
         box.appendChild(numRow);
       }

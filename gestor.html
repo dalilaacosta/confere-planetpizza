@@ -990,19 +990,11 @@ function renderChecklists(){
       parsedList.appendChild(h('div',{style:{fontSize:11,fontWeight:700,color:'#555',letterSpacing:'.06em',textTransform:'uppercase',margin:'10px 0 8px'}},parsedItems.length+' itens — defina o tipo de cada um:'));
       const isInvPreview=cl.checklist_type==='inventory';
       parsedItems.forEach((item,i)=>{
-        const row=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6,padding:'8px',background:'#fff',border:'1px solid #D0D0D0',flexWrap:'wrap'}});
+        const row=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6,padding:'8px',background:'#fff',border:'1px solid #D0D0D0'}});
         const num=h('div',{style:{width:22,height:22,background:'#1A237E',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}},String(i+1));
-        const labelEl=h('span',{style:{flex:1,fontSize:13,color:'#1A1A1A',minWidth:120}},item.label);
+        const labelEl=h('span',{style:{flex:1,fontSize:13,color:'#1A1A1A'}},item.label);
         row.appendChild(num);row.appendChild(labelEl);
-        if(isInvPreview){
-          const unitSelect=document.createElement('select');unitSelect.className='form-select';
-          Object.assign(unitSelect.style,{width:'130px',flexShrink:'0',fontSize:'12px'});
-          ['Kilo(s)','Caixa(s)','Bisnaga(s)','UN','Balde(s)','Litro(s)'].forEach(u=>{
-            const o=document.createElement('option');o.value=u;o.textContent=u;unitSelect.appendChild(o);
-          });
-          unitSelect.addEventListener('change',e=>{parsedItems[i].unit=e.target.value;});
-          row.appendChild(unitSelect);
-        }else{
+        if(!isInvPreview){
           const typeSelect=document.createElement('select');typeSelect.className='form-select';
           Object.assign(typeSelect.style,{width:'160px',flexShrink:'0',fontSize:'12px'});
           [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
@@ -1010,6 +1002,8 @@ function renderChecklists(){
           });
           typeSelect.addEventListener('change',e=>{parsedItems[i].type=e.target.value;});
           row.appendChild(typeSelect);
+        }else{
+          row.appendChild(h('span',{style:{fontSize:11,color:'#888',padding:'4px 8px',background:'#F0F0F0',borderRadius:4}},'Unidade definida na contagem'));
         }
         parsedList.appendChild(row);
       });
@@ -1080,29 +1074,24 @@ function renderChecklists(){
         });
         // Novo item
         const isInv=cl.checklist_type==='inventory';
-        const nr=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,paddingTop:8,borderTop:'1px dashed #D0D0D0',flexWrap:'wrap'}});
-        const nt=document.createElement('select');nt.className='form-select';nt.style.fontSize='12px';
-        if(isInv){
-          nt.style.display='none';nt.value='number';
-        }else{
-          nt.style.width='150px';
+        const nr=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,paddingTop:8,borderTop:'1px dashed #D0D0D0'}});
+        if(!isInv){
+          const nt=document.createElement('select');nt.className='form-select';nt.style.width='150px';nt.style.fontSize='12px';
           [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;nt.appendChild(o);});
-        }
-        const nl=document.createElement('input');nl.type='text';nl.className='form-inp';nl.placeholder=isInv?'Nome do item (ex: Arroz)':'Novo item...';nl.style.fontSize='13px';
-        nr.appendChild(nt);nr.appendChild(nl);
-        if(isInv){
-          const nu=document.createElement('select');nu.className='form-select';nu.style.width='130px';nu.style.fontSize='12px';
-          ['Kilo(s)','Caixa(s)','Bisnaga(s)','UN','Balde(s)','Litro(s)'].forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;nu.appendChild(o);});
-          nr.appendChild(nu);
-          nr.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
-            if(!nl.value.trim())return;
-            await saveItem(step.id,'number',nl.value.trim(),step.step_items.length+1,null,nu.value);
-            nl.value='';
-          }},'+'));
-        }else{
+          nr.appendChild(nt);
+          const nl=document.createElement('input');nl.type='text';nl.className='form-inp';nl.placeholder='Novo item...';nl.style.fontSize='13px';
+          nr.appendChild(nl);
           nr.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
             if(!nl.value.trim())return;
             await saveItem(step.id,nt.value,nl.value.trim(),step.step_items.length+1,null);
+            nl.value='';
+          }},'+'));
+        }else{
+          const nl=document.createElement('input');nl.type='text';nl.className='form-inp';nl.placeholder='Nome do item (ex: Arroz)';nl.style.fontSize='13px';
+          nr.appendChild(nl);
+          nr.appendChild(h('button',{className:'btn btn-success btn-sm',onClick:async()=>{
+            if(!nl.value.trim())return;
+            await saveItem(step.id,'number',nl.value.trim(),step.step_items.length+1,null);
             nl.value='';
           }},'+'));
         }
