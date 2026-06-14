@@ -292,7 +292,7 @@ async function init(){
   try{
     const [opsR,clsR,unitsR]=await Promise.all([
       sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
-      sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('company_id',COMPANY_ID).order('sector'),
+      sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit,barcode))').eq('company_id',COMPANY_ID).order('sector'),
       sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     ]);
     const cls=clsR.data||[];
@@ -335,7 +335,7 @@ async function reload(){
   const currentTab=state.tab;
   const [opsR,clsR,unitsR,issR,docsR]=await Promise.all([
     sb.from('operators').select('*').eq('company_id',COMPANY_ID).order('name'),
-    sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('company_id',COMPANY_ID).order('sector'),
+    sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit,barcode))').eq('company_id',COMPANY_ID).order('sector'),
     sb.from('units').select('*').eq('company_id',COMPANY_ID).order('name'),
     sb.from('issues').select('*, operators(name), checklists(name)').eq('status','open').order('created_at',{ascending:false}),
     sb.from('documents').select('*, units(name)').eq('company_id',COMPANY_ID).order('expiry_date').then(r=>{console.log('🔍 RELOAD docs query result:', r?.data?.length, 'company_id used:', COMPANY_ID, r?.data?.map(d=>d.name+' ['+d.company_id+']'));return r;}),
@@ -1143,17 +1143,35 @@ function renderChecklists(){
         hdr.appendChild(h('button',{className:'btn btn-danger btn-sm',style:{flexShrink:0},onClick:async()=>{if(confirm('Remover etapa?'))await deleteStep(step.id);}},'Remover'));
         sc.appendChild(hdr);
         // Itens
+        const isInvCl=cl.checklist_type==='inventory';
         step.step_items.forEach(item=>{
-          const ir=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:6}});
-          const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='150px';typeSelect.style.fontSize='12px';
-          [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
-            const o=document.createElement('option');o.value=v;o.textContent=l;if(item.type===v)o.selected=true;typeSelect.appendChild(o);
-          });
+          const wrap=h('div',{style:{marginBottom:8,background:'#F7F9FC',borderRadius:8,padding:'8px'}});
+          const ir=h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:isInvCl?6:0}});
+          if(!isInvCl){
+            const typeSelect=document.createElement('select');typeSelect.className='form-select';typeSelect.style.width='150px';typeSelect.style.fontSize='12px';
+            [['check','✓ Confirmação'],['photo','📷 Foto'],['number','🌡 Número'],['text','📝 Texto']].forEach(([v,l])=>{
+              const o=document.createElement('option');o.value=v;o.textContent=l;if(item.type===v)o.selected=true;typeSelect.appendChild(o);
+            });
+            ir.appendChild(typeSelect);
+          }
           const labelInp=document.createElement('input');labelInp.type='text';labelInp.className='form-inp';labelInp.value=item.label;labelInp.style.fontSize='13px';
-          ir.appendChild(typeSelect);ir.appendChild(labelInp);
-          ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{await saveItem(step.id,typeSelect.value,labelInp.value,item.position,item.id);}},'💾'));
+          const barcodeInp=document.createElement('input');barcodeInp.type='text';barcodeInp.className='form-inp';
+          barcodeInp.value=item.barcode||'';barcodeInp.placeholder='Código de barras (opcional)';
+          Object.assign(barcodeInp.style,{fontSize:'12px',color:'#0D7390'});
+          ir.appendChild(labelInp);
+          ir.appendChild(h('button',{className:'btn btn-primary btn-sm',onClick:async()=>{
+            const type=isInvCl?'number':(ir.querySelector('select')?.value||'check');
+            await saveItem(step.id,type,labelInp.value,item.position,item.id,null,barcodeInp.value.trim()||null);
+          }},'💾'));
           ir.appendChild(h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Remover item?'))await deleteItem(item.id);}},'×'));
-          sc.appendChild(ir);
+          wrap.appendChild(ir);
+          if(isInvCl){
+            const bRow=h('div',{style:{display:'flex',alignItems:'center',gap:6}});
+            bRow.appendChild(h('span',{style:{fontSize:12,color:'#888',flexShrink:0}},'🔖 Barcode:'));
+            bRow.appendChild(barcodeInp);
+            wrap.appendChild(bRow);
+          }
+          sc.appendChild(wrap);
         });
         // Novo item
         const isInv=cl.checklist_type==='inventory';
