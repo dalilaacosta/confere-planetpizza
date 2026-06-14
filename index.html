@@ -341,27 +341,7 @@ function renderLogin(){
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('☑','ConfereOps — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
-  const isInvCl=state.activeList.checklist_type==='inventory';
-  const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
-
-  // Search bar for inventory checklists
-  let invSearchQuery='';
-  if(isInvCl){
-    const searchBar=h('div',{style:{padding:'10px 12px',background:'#fff',borderBottom:'1px solid #F0F0F0',flexShrink:0,display:'flex',alignItems:'center',gap:8}});
-    const searchIcon=h('span',{style:{fontSize:16,color:'#999'}},'🔍');
-    const searchInp=document.createElement('input');
-    searchInp.type='text';searchInp.placeholder='Buscar item...';
-    Object.assign(searchInp.style,{border:'none',outline:'none',flex:1,fontSize:14,fontFamily:"'Roboto',sans-serif",background:'transparent'});
-    searchInp.addEventListener('input',e=>{
-      invSearchQuery=e.target.value.toLowerCase();
-      document.querySelectorAll('.inv-item-row').forEach(row=>{
-        const name=(row.dataset.name||'').toLowerCase();
-        row.style.display=invSearchQuery&&!name.includes(invSearchQuery)?'none':'';
-      });
-    });
-    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);
-    body.appendChild(searchBar);
-  }
+  const body=div({flex:1,overflowY:'auto'});
   const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
   const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
   const swrap=div({className:'search-wrap'});
@@ -812,10 +792,19 @@ function renderExec(){
 function render(){
   const root=document.getElementById('root');root.innerHTML='';
   let c;
-  if(state.screen==='loading')c=renderLoading();
-  else if(state.screen==='login')c=renderLogin();
-  else if(state.screen==='home')c=renderHome();
-  else if(state.screen==='exec')c=renderExec();
+  try{
+    if(state.screen==='loading')c=renderLoading();
+    else if(state.screen==='login')c=renderLogin();
+    else if(state.screen==='home')c=renderHome();
+    else if(state.screen==='exec')c=renderExec();
+  }catch(err){
+    console.error('❌ Render error:', err);
+    const errDiv=document.createElement('div');
+    errDiv.style.cssText='padding:20px;color:red;font-family:Roboto,sans-serif;font-size:13px;';
+    errDiv.textContent='Erro: '+err.message;
+    root.appendChild(errDiv);
+    return;
+  }
   if(c){c.className='screen';root.appendChild(c);}
 }
 render();init();
