@@ -309,7 +309,7 @@ async function nextStep(){
 async function doRedo(motivo){
   const cl=state.confirmRedo;if(!cl)return;
   try{
-    await sb.from('executions').update({status:'replaced',redo_reason:motivo||null}).eq('checklist_id',cl.id).eq('status','done').gte('started_at',todayStart());
+    // Don't replace old execution - just create a new one, keeping history
     const execs=await loadTodayExecs();ss({confirmRedo:null,executions:execs});startList(cl);
   }catch(e){ss({error:'Erro.',confirmRedo:null});}
 }
@@ -748,7 +748,7 @@ function renderExec(){
         if(isInvItem){
           const unitSel=document.createElement('select');unitSel.className='inp';
           Object.assign(unitSel.style,{width:'120px',fontSize:13,fontWeight:700,padding:'12px 8px',color:'#0D7390',background:'#E8F4F8',border:'2px solid #B2DDE8',borderRadius:10,cursor:'pointer'});
-          const savedUnit=(sVals[item.id]||'').split('|')[1]||'Kilo(s)';
+          const savedUnit=(sVals[item.id]||'').split('|')[1]||item.unit||'Kilo(s)';
           ['Kilo(s)','Caixa(s)','Bisnaga(s)','UN','Balde(s)','Litro(s)'].forEach(u=>{
             const o=document.createElement('option');o.value=u;o.textContent=u;
             if(u===savedUnit)o.selected=true;
@@ -757,10 +757,16 @@ function renderExec(){
             let _saveTimer=null;
           const persistVal=async(combined)=>{
             try{
+              const [qty,unit]=combined.split('|');
               await sb.from('item_responses').upsert(
                 {execution_id:state.executionId,item_id:item.id,value:combined},
                 {onConflict:'execution_id,item_id'}
               );
+              // Memorize last used unit for this item
+              if(unit&&unit!==item.unit){
+                await sb.from('step_items').update({unit}).eq('id',item.id);
+                item.unit=unit; // update local reference
+              }
             }catch(e){}
           };
           const saveNumUnit=(immediate)=>{
@@ -858,6 +864,28 @@ function renderExec(){
   }
 
   return scr;
+}
+
+function renderConfirmRedo(cl){
+  const isInv=cl.checklist_type==='inventory';
+  const overlay=h('div',{className:'overlay',style:{alignItems:'flex-end'},onClick:e=>{if(e.target===overlay)ss({confirmRedo:null});}});
+  const modal=h('div',{className:'modal'});
+  modal.appendChild(h('div',{className:'modal-hdr'},h('span',{},isInv?'📦 Refazer Contagem':'🔄 Refazer Checklist')));
+  const mb=h('div',{style:{padding:'20px',textAlign:'center'}});
+  mb.appendChild(h('div',{style:{fontSize:36,marginBottom:12}},isInv?'📦':'🔄'));
+  mb.appendChild(h('div',{style:{fontSize:15,fontWeight:700,color:'#1A1A1A',marginBottom:8}},
+    isInv?'Deseja refazer a contagem de estoque?':'Deseja refazer este checklist?'));
+  mb.appendChild(h('div',{style:{fontSize:13,color:'#888',marginBottom:20}},
+    isInv?'O histórico da contagem anterior será mantido nos Resultados.':'A execução anterior será mantida no histórico.'));
+  const btnRow=h('div',{style:{display:'flex',gap:10}});
+  btnRow.appendChild(h('button',{style:{flex:1,padding:'14px',background:'#EEE',color:'#555',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+    onClick:()=>ss({confirmRedo:null})},'Não'));
+  btnRow.appendChild(h('button',{style:{flex:1,padding:'14px',background:'#0D7390',color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+    onClick:()=>doRedo()},'Sim, refazer'));
+  mb.appendChild(btnRow);
+  modal.appendChild(mb);
+  overlay.appendChild(modal);
+  return overlay;
 }
 
 // Save all inventory values before page closes
