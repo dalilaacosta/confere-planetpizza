@@ -169,7 +169,7 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 async function init(){
   try{
     const {data:ops}=await sb.from('operators').select('*').eq('active',true).order('name');
-    const {data:cls}=await sb.from('checklists').select('*, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
+    const {data:cls}=await sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();
@@ -374,7 +374,14 @@ function renderLogin(){
     if(val.length===4){
       const emp=state.selEmp;
       const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
-      if(op){ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null});}
+      if(op){
+        // Filter checklists by company after login
+        const companyCls=state.checklists.filter(cl=>cl.company_id===op.company_id);
+        // Also filter operators shown in rankings to same company
+        const companyOps=state.operators.filter(o=>o.company_id===op.company_id);
+        ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null,
+            checklists:companyCls,operators:companyOps});
+      }
       else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
     }
   });
