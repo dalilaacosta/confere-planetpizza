@@ -341,7 +341,27 @@ function renderLogin(){
   const scr=div({display:'flex',flexDirection:'column',flex:1});
   scr.appendChild(topBar('☑','ConfereOps — Acesso do Operador'));
   if(error)scr.appendChild(h('div',{className:'err-bar'},error));
+  const isInvCl=state.activeList.checklist_type==='inventory';
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
+
+  // Search bar for inventory checklists
+  let invSearchQuery='';
+  if(isInvCl){
+    const searchBar=h('div',{style:{padding:'10px 12px',background:'#fff',borderBottom:'1px solid #F0F0F0',flexShrink:0,display:'flex',alignItems:'center',gap:8}});
+    const searchIcon=h('span',{style:{fontSize:16,color:'#999'}},'🔍');
+    const searchInp=document.createElement('input');
+    searchInp.type='text';searchInp.placeholder='Buscar item...';
+    Object.assign(searchInp.style,{border:'none',outline:'none',flex:1,fontSize:14,fontFamily:"'Roboto',sans-serif",background:'transparent'});
+    searchInp.addEventListener('input',e=>{
+      invSearchQuery=e.target.value.toLowerCase();
+      document.querySelectorAll('.inv-item-row').forEach(row=>{
+        const name=(row.dataset.name||'').toLowerCase();
+        row.style.display=invSearchQuery&&!name.includes(invSearchQuery)?'none':'';
+      });
+    });
+    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);
+    body.appendChild(searchBar);
+  }
   const opSec=h('div',{className:'sec'},h('span',{},'Quem é você?'));
   const sw=div({background:C.white,border:`1px solid ${C.bd}`,borderTop:'none',padding:'10px 14px'});
   const swrap=div({className:'search-wrap'});
@@ -655,7 +675,27 @@ function renderExec(){
   sub.appendChild(div({textAlign:'right'},div({fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:700,letterSpacing:'.06em'},'PROGRESSO'),div({fontSize:14,color:'#FFD54F',fontWeight:700,marginTop:1},prog+'%')));
   scr.appendChild(sub);
   scr.appendChild(h('div',{className:'prog-track'},h('div',{className:'prog-fill',style:{width:prog+'%'}})));
+  const isInvCl=state.activeList.checklist_type==='inventory';
   const body=div({flex:1,display:'flex',flexDirection:'column',overflowY:'auto'});
+
+  // Search bar for inventory checklists
+  let invSearchQuery='';
+  if(isInvCl){
+    const searchBar=h('div',{style:{padding:'10px 12px',background:'#fff',borderBottom:'1px solid #F0F0F0',flexShrink:0,display:'flex',alignItems:'center',gap:8}});
+    const searchIcon=h('span',{style:{fontSize:16,color:'#999'}},'🔍');
+    const searchInp=document.createElement('input');
+    searchInp.type='text';searchInp.placeholder='Buscar item...';
+    Object.assign(searchInp.style,{border:'none',outline:'none',flex:1,fontSize:14,fontFamily:"'Roboto',sans-serif",background:'transparent'});
+    searchInp.addEventListener('input',e=>{
+      invSearchQuery=e.target.value.toLowerCase();
+      document.querySelectorAll('.inv-item-row').forEach(row=>{
+        const name=(row.dataset.name||'').toLowerCase();
+        row.style.display=invSearchQuery&&!name.includes(invSearchQuery)?'none':'';
+      });
+    });
+    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);
+    body.appendChild(searchBar);
+  }
   step.step_items.forEach((item,i)=>{
     const isProbText=isProbStep&&item.label.includes('descreva');
     const isProbPhoto=isProbStep&&item.label.includes('opcional');
@@ -666,7 +706,8 @@ function renderExec(){
     const cardBd=isProbStep?'#FFCDD2':C.bd;
     const tL={check:isProbStep&&item.label.includes('Detectou')?'PROBLEMA ENCONTRADO?':'CONFIRMAÇÃO',photo:isOptPhoto?'FOTO (OPCIONAL)':'FOTO OBRIGATÓRIA',number:'LEITURA NUMÉRICA',text:isProbText?'DESCREVA O PROBLEMA':'OBSERVAÇÃO'}[item.type]||'ITEM';
     const tI={check:isProbStep?'🔧':'✓',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
-    const box=h('div',{style:{background:cardBg,borderRadius:'14px',border:`1px solid ${cardBd}`,padding:'14px',marginBottom:10,marginTop:10}});
+    const box=h('div',{className:'inv-item-row',style:{background:cardBg,borderRadius:'14px',border:`1px solid ${cardBd}`,padding:'14px',marginBottom:10,marginTop:10}});
+    box.dataset.name=item.label.toLowerCase();
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
       const ck=sChecks[item.id];
@@ -715,6 +756,52 @@ function renderExec(){
     body.appendChild(box);
     if(i<step.step_items.length-1)body.appendChild(div({height:8}));
   });
+  // Add item button for inventory
+  if(isInvCl){
+    const addItemWrap=h('div',{style:{padding:'10px 12px',flexShrink:0}});
+    let addMode=false;
+    const addBtn=h('button',{style:{width:'100%',padding:'12px',background:'#E8F4F8',border:'2px dashed #0D7390',borderRadius:12,color:'#0D7390',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+      onClick:()=>{addMode=!addMode;addForm.style.display=addMode?'flex':'none';addBtn.style.display=addMode?'none':'block';}
+    },'+ Adicionar item não listado');
+    const addForm=h('div',{style:{display:'none',flexDirection:'column',gap:8,background:'#F7F9FC',border:'1px solid #D0D0D0',borderRadius:12,padding:12}});
+    const addNameInp=document.createElement('input');
+    addNameInp.type='text';addNameInp.className='inp';addNameInp.placeholder='Nome do item (ex: Tomate)';
+    const addUnitSel=document.createElement('select');addUnitSel.className='inp';
+    Object.assign(addUnitSel.style,{fontSize:13,color:'#0D7390',fontWeight:700});
+    ['Kilo(s)','Caixa(s)','Bisnaga(s)','UN','Balde(s)','Litro(s)'].forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;addUnitSel.appendChild(o);});
+    const addRow=h('div',{style:{display:'flex',gap:8}});
+    const confirmBtn=h('button',{style:{flex:1,padding:'10px',background:'#0D7390',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+      onClick:async()=>{
+        const name=addNameInp.value.trim();
+        if(!name)return;
+        confirmBtn.textContent='Salvando...';confirmBtn.disabled=true;
+        try{
+          // Save to DB as new step_item in current step
+          const curStep=state.activeList.checklist_steps[state.stepIdx];
+          const pos=curStep.step_items.length+1;
+          const{data:newItem}=await sb.from('step_items').insert({step_id:curStep.id,type:'number',label:name,position:pos}).select().single();
+          if(newItem){
+            // Add to current step in state
+            curStep.step_items.push(newItem);
+            // Set default value
+            ss({sVals:{...state.sVals,[newItem.id]:'0|'+addUnitSel.value}});
+          }
+        }catch(e){alert('Erro ao adicionar: '+e.message);}
+        addNameInp.value='';addForm.style.display='none';addBtn.style.display='block';addMode=false;
+      }
+    },'✓ Salvar');
+    const cancelBtn=h('button',{style:{padding:'10px 14px',background:'#EEE',color:'#555',border:'none',borderRadius:8,fontSize:13,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+      onClick:()=>{addForm.style.display='none';addBtn.style.display='block';addMode=false;}
+    },'✕');
+    addRow.appendChild(confirmBtn);addRow.appendChild(cancelBtn);
+    addForm.appendChild(h('div',{style:{fontSize:12,fontWeight:700,color:'#888',marginBottom:4}},'Novo item para adicionar ao estoque:'));
+    addForm.appendChild(addNameInp);
+    addForm.appendChild(addUnitSel);
+    addForm.appendChild(addRow);
+    addItemWrap.appendChild(addBtn);addItemWrap.appendChild(addForm);
+    body.appendChild(addItemWrap);
+  }
+
   scr.appendChild(body);
   const btns=div({className:'btn-row'});
   btns.appendChild(h('button',{className:'btn btn-gray',onClick:abandonList},'◀  Voltar'));
