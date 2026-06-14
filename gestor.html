@@ -874,31 +874,35 @@ function renderChecklists(){
     }
 
     mb.appendChild(inp('Nome do Checklist *','name','text','Ex: Limpeza de Abertura'));
-    const row1=div({display:'grid',gridTemplateColumns:'100px 1fr 1fr',gap:'12px',marginTop:'14px'});
-    // Emoji picker for icon
-    const iconGroup=h('div',{className:'form-group'});
-    iconGroup.appendChild(h('label',{className:'form-label'},'Ícone'));
-    const iconBtn=h('button',{type:'button',className:'form-inp',style:{cursor:'pointer',fontSize:22,textAlign:'center',padding:'6px',background:'#fff',border:'1.5px solid #D0D0D0',display:'flex',alignItems:'center',justifyContent:'center',gap:6},
-      onClick:()=>{picker.style.display=picker.style.display==='none'?'grid':'none';}
-    },h('span',{id:'icon-preview'},md.icon||'📋'),h('span',{style:{fontSize:11,color:'#888',marginLeft:4}},'▼'));
-    const emojis=['📋','🧹','🍕','🍔','🍽️','🥗','🧽','🧴','🪣','💧','🔧','⚙️','🛒','📦','🚪','🚿','🪟','🧯','🔥','❄️','🌡️','📱','💻','🖥️','📷','🏠','🚗','👷','👔','📝','✅','⭐','🎯','🔑'];
-    const picker=h('div',{style:{display:'none',gridTemplateColumns:'repeat(6,1fr)',gap:4,position:'absolute',zIndex:99,background:'#fff',border:'1px solid #D0D0D0',padding:8,boxShadow:'0 4px 12px rgba(0,0,0,.15)',top:'100%',left:0,right:0}});
-    emojis.forEach(e=>{
-      const btn=h('button',{type:'button',style:{fontSize:20,padding:4,background:'none',border:'none',cursor:'pointer',borderRadius:4},onClick:()=>{
-        md.icon=e;
-        document.getElementById('icon-preview').textContent=e;
-        picker.style.display='none';
-      }},e);
-      btn.addEventListener('mouseover',()=>btn.style.background='#F0F4FF');
-      btn.addEventListener('mouseout',()=>btn.style.background='none');
-      picker.appendChild(btn);
+    const row1=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'});
+    // Day of week selector (shows when frequency is Semanal/Quinzenal)
+    const dowGroup=h('div',{className:'form-group',id:'dow-group',style:{display:['Semanal','Quinzenal'].includes(md.frequency||'')?'block':'none'}});
+    dowGroup.appendChild(h('label',{className:'form-label'},'Dia da Semana'));
+    const dowSel=document.createElement('select');dowSel.className='form-select';
+    [['','Selecione...'],['Domingo','Domingo'],['Segunda-feira','Segunda-feira'],['Terça-feira','Terça-feira'],['Quarta-feira','Quarta-feira'],['Quinta-feira','Quinta-feira'],['Sexta-feira','Sexta-feira'],['Sábado','Sábado']].forEach(([v,l])=>{
+      const o=document.createElement('option');o.value=v;o.textContent=l;
+      if((md.day_of_week||'')=== v)o.selected=true;
+      dowSel.appendChild(o);
     });
-    const iconWrap=h('div',{style:{position:'relative'}});
-    iconWrap.appendChild(iconBtn);iconWrap.appendChild(picker);
-    iconGroup.appendChild(iconWrap);
-    row1.appendChild(iconGroup);
+    dowSel.addEventListener('change',e=>{md.day_of_week=e.target.value;});
+    dowGroup.appendChild(dowSel);
+    row1.appendChild(dowGroup);
     row1.appendChild(sel('Setor','sector',[['Geral','Geral'],['Balcão','Balcão'],['Cozinha','Cozinha'],['Salão','Salão'],['Estoque','Estoque']]));
-    row1.appendChild(sel('Frequência','frequency',[['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']]));
+    const freqGrp=h('div',{className:'form-group'});
+    freqGrp.appendChild(h('label',{className:'form-label'},'Frequência'));
+    const freqEl=document.createElement('select');freqEl.className='form-select';
+    [['Diário','Diário'],['Semanal','Semanal'],['Quinzenal','Quinzenal'],['Mensal','Mensal']].forEach(([v,l])=>{
+      const o=document.createElement('option');o.value=v;o.textContent=l;
+      if((md.frequency||'Diário')===v)o.selected=true;
+      freqEl.appendChild(o);
+    });
+    freqEl.addEventListener('change',e=>{
+      md.frequency=e.target.value;
+      const dowGrp=document.getElementById('dow-group');
+      if(dowGrp)dowGrp.style.display=['Semanal','Quinzenal'].includes(e.target.value)?'block':'none';
+    });
+    freqGrp.appendChild(freqEl);
+    row1.appendChild(freqGrp);
     mb.appendChild(row1);
 
     const row2=div({display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'14px'});
@@ -918,7 +922,7 @@ function renderChecklists(){
     m.appendChild(h('div',{className:'modal-footer',style:{padding:'14px 20px'}},
       h('button',{className:'btn btn-gray',style:{padding:'10px 24px'},onClick:()=>ss({modal:null,modalData:{}})},'Cancelar'),
       h('button',{className:'btn btn-primary',style:{padding:'10px 28px'},disabled:saving,onClick:()=>{
-        const data={name:md.name,icon:md.icon||'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',start_time:md.start_time||null,deadline:md.deadline||null,active:chk.checked,company_id:COMPANY_ID};
+        const data={name:md.name,icon:'📋',sector:md.sector||'Geral',frequency:md.frequency||'Diário',day_of_week:md.day_of_week||null,start_time:md.start_time||null,deadline:md.deadline||null,active:chk.checked,company_id:COMPANY_ID};
         saveChecklist(data,md.id);
       }},saving?'Salvando...':'💾  Salvar')
     ));
