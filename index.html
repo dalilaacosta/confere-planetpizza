@@ -225,11 +225,27 @@ async function startList(cl){
   try{
     const existing=state.executions.find(e=>e.checklist_id===cl.id&&e.operator_id===state.employee.id&&e.status==='in_progress');
     let execId=existing?.id;
+    let restoredVals={},restoredChecks={},restoredPhotos={};
+
     if(!execId){
       const {data,error}=await sb.from('executions').insert({checklist_id:cl.id,operator_id:state.employee.id,status:'in_progress'}).select().single();
       if(error)throw error;execId=data.id;
+    } else {
+      // Restore previously saved responses
+      const {data:responses}=await sb.from('item_responses').select('*').eq('execution_id',execId);
+      (responses||[]).forEach(r=>{
+        if(r.value!==null&&r.value!==undefined){
+          // Check if it's a check type (true/false)
+          if(r.value==='true')restoredChecks[r.item_id]=true;
+          else if(r.value==='false')restoredChecks[r.item_id]=false;
+          else restoredVals[r.item_id]=r.value; // number or text (includes unit for inventory)
+        }
+        if(r.photo_url)restoredPhotos[r.item_id]=r.photo_url;
+      });
     }
-    ss({activeList:cl,executionId:execId,stepIdx:0,sVals:{},sPhotos:{},sChecks:{},screen:'exec'});
+
+    ss({activeList:cl,executionId:execId,stepIdx:0,
+        sVals:restoredVals,sPhotos:restoredPhotos,sChecks:restoredChecks,screen:'exec'});
   }catch(e){ss({error:'Erro ao iniciar checklist.'});}
 }
 
@@ -738,13 +754,22 @@ function renderExec(){
             if(u===savedUnit)o.selected=true;
             unitSel.appendChild(o);
           });
-            const saveNumUnit=()=>{
+            const saveNumUnit=async()=>{
             const v=inp.value.trim();
-            if(v)state.sVals={...state.sVals,[item.id]:v+'|'+unitSel.value};
+            if(!v)return;
+            const combined=v+'|'+unitSel.value;
+            state.sVals={...state.sVals,[item.id]:combined};
+            // Save to DB incrementally so values persist
+            try{
+              await sb.from('item_responses').upsert(
+                {execution_id:state.executionId,item_id:item.id,value:combined},
+                {onConflict:'execution_id,item_id'}
+              );
+            }catch(e){}
           };
           inp.addEventListener('blur',saveNumUnit);
           inp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Tab'){saveNumUnit();inp.blur();}});
-          unitSel.addEventListener('change',()=>{saveNumUnit();});
+          unitSel.addEventListener('change',saveNumUnit);
           numRow.appendChild(unitSel);
         }else{
           inp.addEventListener('blur',e=>{state.sVals={...state.sVals,[item.id]:e.target.value};});
