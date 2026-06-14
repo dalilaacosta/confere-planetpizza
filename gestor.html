@@ -794,12 +794,12 @@ function renderChecklists(){
   // Single unified table for all sectors
   const tbl=h('table',{className:'tbl',style:{tableLayout:'fixed',width:'100%'}});
   tbl.appendChild(h('colgroup',{},
-    h('col',{style:{width:'30%'}}),
+    h('col',{style:{width:'28%'}}),
     h('col',{style:{width:'15%'}}),
     h('col',{style:{width:'10%'}}),
     h('col',{style:{width:'15%'}}),
     h('col',{style:{width:'8%'}}),
-    h('col',{style:{width:'22%'}})
+    h('col',{style:{width:'26%'}})
   ));
   tbl.appendChild(h('thead',{},h('tr',{},
     h('th',{},'Checklist'),h('th',{},'Horário'),h('th',{},'Frequência'),
@@ -834,7 +834,6 @@ function renderChecklists(){
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
           cl.checklist_type==='inventory'?h('button',{className:'btn btn-sm',style:{marginRight:3,background:'#0D7390',color:'#fff'},onClick:()=>ss({modal:'results',modalData:{...cl}})},'📊 Resultados'):'',
-          h('button',{className:`btn btn-sm ${cl.active?'btn-danger':'btn-success'}`,style:{marginRight:3},onClick:()=>toggleChecklist(cl.id,!cl.active)},cl.active?'Desativar':'Ativar'),
           h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"? Esta ação não pode ser desfeita.')){try{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}catch(e){ss({error:'Erro ao excluir: '+(e.message||'')});setTimeout(()=>ss({error:null}),4000);}}}},'Excluir')
         )
       );
