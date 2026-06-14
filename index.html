@@ -837,7 +837,27 @@ function renderExec(){
   const btns=div({className:'btn-row'});
   btns.appendChild(h('button',{className:'btn btn-gray',onClick:abandonList},'◀  Voltar'));
   btns.appendChild(h('button',{className:'btn '+(ok?(isLast?'btn-green':'btn-blue'):'btn-gray'),onClick:ok?nextStep:null,disabled:!ok},isLast?'✓  Finalizar':'Próximo  ▶'));
-  scr.appendChild(btns);return scr;
+  scr.appendChild(btns);
+
+  // Finalizar antecipado para contagem de estoque
+  if(isInvCl&&!isLast){
+    const finishBtn=h('button',{
+      style:{margin:'8px 12px 12px',width:'calc(100% - 24px)',padding:'14px',background:'#2E7D32',color:'#fff',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:"'Roboto',sans-serif"},
+      onClick:async()=>{
+        if(!confirm('Finalizar a contagem agora? Os itens já preenchidos serão salvos.'))return;
+        try{
+          const pendingCount=Object.values(state.sChecks||{}).filter(v=>v===false).length;
+          await sb.from('executions').update({status:'done',score:100,finished_at:new Date().toISOString(),pending_count:pendingCount}).eq('id',state.executionId);
+          const execs=await loadTodayExecs();
+          ss({screen:'home',activeList:null,executionId:null,stepIdx:0,sVals:{},sPhotos:{},sChecks:{},executions:execs,
+              lastDone:{name:state.activeList.name,icon:'📦'}});
+        }catch(e){alert('Erro ao finalizar: '+e.message);}
+      }
+    },'✅ Finalizar Contagem');
+    scr.appendChild(finishBtn);
+  }
+
+  return scr;
 }
 
 // Save all inventory values before page closes
