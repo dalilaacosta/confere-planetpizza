@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="ConfereOps"/>
 <title>ConfereOps</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -171,7 +172,7 @@ async function init(){
     // Get company from URL param (?company=UUID)
     const urlCompany=new URLSearchParams(window.location.search).get('company');
     let opsQuery=sb.from('operators').select('*').eq('active',true).order('name');
-    let clsQuery=sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit))').eq('active',true).order('sector');
+    let clsQuery=sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit,barcode))').eq('active',true).order('sector');
     if(urlCompany){
       opsQuery=opsQuery.eq('company_id',urlCompany);
       clsQuery=clsQuery.eq('company_id',urlCompany);
@@ -704,7 +705,51 @@ function renderExec(){
         row.style.display=invSearchQuery&&!name.includes(invSearchQuery)?'none':'';
       });
     });
-    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);
+
+    // Barcode scanner button
+    let scanner=null;
+    const scanBtn=h('button',{style:{background:'#0D7390',color:'#fff',border:'none',borderRadius:8,padding:'7px 12px',fontSize:18,cursor:'pointer',flexShrink:0},
+      onClick:()=>{
+        if(scanner){scanner.clear();scanner=null;scanOverlay.style.display='none';return;}
+        scanOverlay.style.display='flex';
+        scanner=new Html5Qrcode('scan-reader');
+        scanner.start({facingMode:'environment'},{fps:10,qrbox:220},
+          (code)=>{
+            // Found barcode - find matching item
+            const allRows=document.querySelectorAll('.inv-item-row');
+            let found=false;
+            allRows.forEach(row=>{
+              if(row.dataset.barcode===code||row.dataset.name.toLowerCase().includes(code.toLowerCase())){
+                row.style.display='';
+                row.scrollIntoView({behavior:'smooth',block:'center'});
+                const inp=row.querySelector('input[type="number"]');
+                if(inp){inp.focus();inp.select();}
+                found=true;
+              }
+            });
+            if(!found){
+              searchInp.value=code;
+              searchInp.dispatchEvent(new Event('input'));
+            }
+            scanner.clear();scanner=null;scanOverlay.style.display='none';
+          },
+          ()=>{}
+        ).catch(()=>{scanOverlay.style.display='none';alert('Não foi possível acessar a câmera.');});
+      }
+    },'📷');
+
+    // Scanner overlay
+    const scanOverlay=h('div',{style:{display:'none',position:'fixed',inset:0,background:'rgba(0,0,0,.85)',zIndex:500,flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}});
+    const scanReader=document.createElement('div');scanReader.id='scan-reader';scanReader.style.cssText='width:280px;max-width:90vw;border-radius:12px;overflow:hidden;';
+    const closeScan=h('button',{style:{background:'rgba(255,255,255,.15)',color:'#fff',border:'none',padding:'10px 24px',borderRadius:99,fontSize:14,fontWeight:700,cursor:'pointer'},
+      onClick:()=>{if(scanner){scanner.clear();scanner=null;}scanOverlay.style.display='none';}
+    },'✕ Fechar câmera');
+    scanOverlay.appendChild(h('div',{style:{color:'#fff',fontSize:14,fontWeight:700}},'Aponte para o código de barras'));
+    scanOverlay.appendChild(scanReader);
+    scanOverlay.appendChild(closeScan);
+    document.body.appendChild(scanOverlay);
+
+    searchBar.appendChild(searchIcon);searchBar.appendChild(searchInp);searchBar.appendChild(scanBtn);
     body.appendChild(searchBar);
   }
   step.step_items.forEach((item,i)=>{
@@ -719,6 +764,7 @@ function renderExec(){
     const tI={check:isProbStep?'🔧':'✓',photo:'📷',number:'🌡',text:isProbText?'⚠️':'📝'}[item.type];
     const box=h('div',{className:'inv-item-row',style:{background:cardBg,borderRadius:'14px',border:`1px solid ${cardBd}`,padding:'14px',marginBottom:10,marginTop:10}});
     box.dataset.name=item.label.toLowerCase();
+    if(item.barcode)box.dataset.barcode=item.barcode;
     box.appendChild(div({fontSize:14,fontWeight:500,color:C.tx,marginBottom:12,lineHeight:1.5},item.label));
     if(item.type==='check'){
       const ck=sChecks[item.id];
