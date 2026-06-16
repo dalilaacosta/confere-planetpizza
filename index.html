@@ -169,8 +169,10 @@ function todayStart(){const d=new Date();d.setHours(0,0,0,0);return d.toISOStrin
 
 async function init(){
   try{
-    // Get company from URL param (?company=UUID)
-    const urlCompany=new URLSearchParams(window.location.search).get('company');
+    // Get URL params
+    const urlParams=new URLSearchParams(window.location.search);
+    const urlCompany=urlParams.get('company');
+    const urlChecklist=urlParams.get('checklist');
     let opsQuery=sb.from('operators').select('*').eq('active',true).order('name');
     let clsQuery=sb.from('checklists').select('*,company_id, checklist_steps(id,name,position,step_items(id,type,label,position,unit,barcode))').eq('active',true).order('sector');
     if(urlCompany){
@@ -182,6 +184,19 @@ async function init(){
     cls.forEach(cl=>{cl.checklist_steps.sort((a,b)=>a.position-b.position);cl.checklist_steps.forEach(s=>s.step_items.sort((a,b)=>a.position-b.position));});
     const execs=await loadTodayExecs();
     subscribeRealtime();
+    // Check for existing session (returning user from shelf QR)
+    const savedSession=getSession?getSession():JSON.parse(localStorage.getItem('confere_user')||'null');
+    if(savedSession&&urlChecklist&&savedSession.company_id===urlCompany){
+      const filteredCls=(cls||[]).filter(c=>!urlCompany||c.company_id===urlCompany);
+      const targetCl=filteredCls.find(c=>c.id===urlChecklist);
+      if(targetCl){
+        const companyOps=(ops||[]).filter(o=>o.company_id===savedSession.company_id);
+        ss({screen:'home',employee:savedSession,pin:'',activeTab:'checklists',
+            operators:companyOps,checklists:filteredCls,executions:execs,error:null});
+        setTimeout(()=>startList(targetCl),200);
+        return;
+      }
+    }
     ss({screen:'login',operators:ops||[],checklists:cls||[],executions:execs,error:null});
   }catch(e){ss({screen:'login',error:'Erro ao conectar. Verifique a internet.'});}
 }
@@ -400,12 +415,15 @@ function renderLogin(){
       const emp=state.selEmp;
       const op=state.operators.find(o=>o.pin===val&&o.id===emp?.id);
       if(op){
-        // Filter checklists by company after login
         const companyCls=state.checklists.filter(cl=>cl.company_id===op.company_id);
-        // Also filter operators shown in rankings to same company
         const companyOps=state.operators.filter(o=>o.company_id===op.company_id);
         ss({employee:op,screen:'home',pin:'',activeTab:'checklists',profileData:null,
             checklists:companyCls,operators:companyOps});
+        // Auto-open checklist if coming from shelf QR
+        if(urlChecklist){
+          const targetCl=companyCls.find(c=>c.id===urlChecklist);
+          if(targetCl)setTimeout(()=>startList(targetCl),200);
+        }
       }
       else{updateBoxes(val,true);errMsg.style.display='block';setTimeout(()=>{nativeInp.value='';updateBoxes('',false);errMsg.style.display='none';},900);}
     }

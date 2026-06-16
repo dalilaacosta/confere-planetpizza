@@ -834,6 +834,7 @@ function renderChecklists(){
           h('button',{className:'btn btn-primary btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'checklist',modalData:{...cl}})},'Editar'),
           h('button',{className:'btn btn-gray btn-sm',style:{marginRight:3},onClick:()=>ss({modal:'steps',modalData:{...cl}})},'Etapas'),
           cl.checklist_type==='inventory'?h('button',{className:'btn btn-sm',style:{marginRight:3,background:'#0D7390',color:'#fff'},onClick:()=>ss({modal:'results',modalData:{...cl}})},'📊 Resultados'):'',
+          cl.checklist_type==='inventory'?h('button',{className:'btn btn-sm',style:{marginRight:3,background:'#6A1B9A',color:'#fff'},onClick:()=>ss({modal:'shelf_qr',modalData:{...cl}})},'🔖 QR Prateleira'):'',
           h('button',{className:'btn btn-danger btn-sm',onClick:async()=>{if(confirm('Excluir "'+cl.name+'"? Esta ação não pode ser desfeita.')){try{await sb.from('checklists').delete().eq('id',cl.id);await reload();ss({success:'Checklist excluído!'});setTimeout(()=>ss({success:null}),3000);}catch(e){ss({error:'Erro ao excluir: '+(e.message||'')});setTimeout(()=>ss({error:null}),4000);}}}},'Excluir')
         )
       );
@@ -948,6 +949,41 @@ function renderChecklists(){
     ));
     overlay.appendChild(m);frag.appendChild(overlay);
   }
+  // Modal QR da prateleira
+  if(modal==='shelf_qr'){
+    const cl=modalData;
+    const shelfUrl=window.location.origin+window.location.pathname.replace('gestor.html','index.html')+'?company='+COMPANY_ID+'&checklist='+cl.id;
+    const overlay=h('div',{className:'overlay',style:{alignItems:'center',padding:'20px'},onClick:e=>{if(e.target===overlay)ss({modal:null,modalData:{}});}});
+    const m=h('div',{className:'modal',style:{maxWidth:'380px',background:'#fff',borderRadius:12,boxShadow:'0 8px 32px rgba(0,0,0,.25)'}});
+    m.appendChild(h('div',{className:'modal-hdr',style:{padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
+      h('span',{style:{fontSize:14}},'🔖 QR Code — Prateleira'),
+      h('button',{className:'modal-close',onClick:()=>ss({modal:null,modalData:{}})},'×')
+    ));
+    const mb=h('div',{style:{padding:'20px',textAlign:'center'}});
+    mb.appendChild(h('div',{style:{fontSize:14,fontWeight:700,color:'#1A1A1A',marginBottom:4}},cl.name));
+    mb.appendChild(h('div',{style:{fontSize:12,color:'#888',marginBottom:16}},'Cole na prateleira para acesso rápido'));
+    // QR Code
+    const qrImg=h('img',{
+      src:'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(shelfUrl)+'&bgcolor=ffffff&color=1A237E&margin=8',
+      style:{width:220,height:220,border:'4px solid #1A237E',borderRadius:8},alt:'QR Code'
+    });
+    mb.appendChild(qrImg);
+    mb.appendChild(h('div',{style:{fontSize:11,color:'#888',marginTop:8,marginBottom:16,wordBreak:'break-all',padding:'0 8px'}},shelfUrl));
+    const printBtn=h('button',{className:'btn btn-primary',style:{width:'100%',padding:'12px',marginBottom:8},onClick:()=>{
+      const w=window.open('','_blank');
+      w.document.write(`<html><body style="font-family:Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px;padding:20px">
+        <div style="font-size:22px;font-weight:700;color:#1A237E;text-align:center">${cl.name}</div>
+        <div style="font-size:13px;color:#555;text-align:center">Escaneie para iniciar ou continuar a contagem</div>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shelfUrl)}&bgcolor=ffffff&color=1A237E&margin=10" style="width:300px;height:300px"/>
+        <div style="font-size:11px;color:#aaa;text-align:center;max-width:280px">${shelfUrl}</div>
+      </body></html>`);
+      w.document.close();w.print();
+    }},'🖨️ Imprimir para colar');
+    mb.appendChild(printBtn);
+    m.appendChild(mb);
+    overlay.appendChild(m);frag.appendChild(overlay);
+  }
+
   // Modal resultados contagem
   if(modal==='results'){
     const cl=modalData;
